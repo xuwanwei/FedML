@@ -44,6 +44,10 @@ class FedTiAPI(object):
     def train(self):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
+
+        payment_plot = []
+        final_payment_plot = []
+        bidding_price_plot = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -60,8 +64,6 @@ class FedTiAPI(object):
                                   np.random.randint(10, 50))
 
             # WDP and Payment
-            # client_indexes = self._client_sampling(round_idx, self.args.client_num_in_total,
-            #                                        self.args.client_num_per_round)
             client_indexes, payment = self._winners_determination()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
@@ -95,10 +97,25 @@ class FedTiAPI(object):
             client_test = self.client_list[client_test_index]
             payment_test = payment[0]
             submitted_bids_test = client_test.get_cost()
-            wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
+            # add to plot list
+            payment_plot.append(payment_test)
+            final_payment_plot.append(client_test.get_training_intensity() * payment_test)
+            bidding_price_plot.append(submitted_bids_test)
+
+            # wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
             logging.info(
                 "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
                     submitted_bids_test))
+            # number of winning clients per global iteration
+            wandb.log({"number of winning clients": len(client_indexes)})
+
+        # plot IR chart
+        wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+            xs=[i for i in range(self.args.comm_round)],
+            ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
+            keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
+            title="Performance on individual rationality"
+        )})
 
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
@@ -265,13 +282,4 @@ class FedTiAPI(object):
         client_second_winner = self.client_list[second_index]
         client_winner = self.client_list[opt_index]
         payment = client_second_winner.get_average_cost() * client_winner.get_training_intensity() - client_winner.get_time()
-        logging.info("client_winner: avg_cost " + str(client_winner.get_average_cost()) + "time " + str(
-            client_winner.get_time()) + ", cost " + str(
-            client_winner.get_cost()) + ", training_intensity " + str(client_winner.get_training_intensity()))
-        logging.info("client_second_winner: avg_cost " + str(client_winner.get_average_cost()) + "time " + str(
-            client_second_winner.get_time()) + ", cost " + str(
-            client_second_winner.get_cost()) + ", training_intensity " + str(
-            client_second_winner.get_training_intensity()))
-        # logging.info("payment, avg_cost:" + str(client_second_winner.get_average_cost()) + ", intensity: " + str(
-        #     client_winner.get_training_intensity()) + ", time: " + str(client_winner.get_time()))
         return payment

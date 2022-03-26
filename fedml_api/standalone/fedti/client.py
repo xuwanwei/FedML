@@ -27,6 +27,8 @@ class Client:
 
     def train(self, w_global):
         self.model_trainer.set_model_params(w_global)
+        # set epochs to training intensity
+        self.args.epochs = self.bid.training_intensity
         self.model_trainer.train(self.local_training_data, self.device, self.args)
         weights = self.model_trainer.get_model_params()
         return weights
