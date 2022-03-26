@@ -30,10 +30,10 @@ from fedml_api.data_preprocessing.MNIST.data_loader import load_partition_data_m
 from fedml_api.model.linear.lr import LogisticRegression
 from fedml_api.model.cv.resnet_gn import resnet18
 
-from fedml_api.standalone.fedavg.fedavg_api import FedAvgAPI
-from fedml_api.standalone.fedavg.my_model_trainer_classification import MyModelTrainer as MyModelTrainerCLS
-from fedml_api.standalone.fedavg.my_model_trainer_nwp import MyModelTrainer as MyModelTrainerNWP
-from fedml_api.standalone.fedavg.my_model_trainer_tag_prediction import MyModelTrainer as MyModelTrainerTAG
+from fedml_api.standalone.fedti.my_model_trainer_classification import MyModelTrainer as MyModelTrainerCLS
+from fedml_api.standalone.fedti.my_model_trainer_nwp import MyModelTrainer as MyModelTrainerNWP
+from fedml_api.standalone.fedti.my_model_trainer_tag_prediction import MyModelTrainer as MyModelTrainerTAG
+from fedml_api.standalone.fedti.fedti_api import FedTiAPI
 
 
 def add_args(parser):
@@ -88,6 +88,9 @@ def add_args(parser):
 
     parser.add_argument('--ci', type=int, default=0,
                         help='CI')
+
+    parser.add_argument('--training_intensity_per_round', type=int, default=700,
+                        help='the training intensity threshold in a round')
     return parser
 
 
@@ -271,7 +274,7 @@ def custom_model_trainer(args, model):
         return MyModelTrainerTAG(model)
     elif args.dataset in ["fed_shakespeare", "stackoverflow_nwp"]:
         return MyModelTrainerNWP(model)
-    else: # default model trainer is for classification problem
+    else:  # default model trainer is for classification problem
         return MyModelTrainerCLS(model)
 
 
@@ -288,7 +291,7 @@ if __name__ == "__main__":
 
     wandb.init(
         project="fedml",
-        name="FedAVG-r" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
+        name="FedTI-r" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
         config=args
     )
 
@@ -311,5 +314,5 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model)
     logging.info(model)
 
-    fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
-    fedavgAPI.train()
+    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
+    fedtiAPI.train()

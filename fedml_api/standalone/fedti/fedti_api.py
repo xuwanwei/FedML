@@ -6,10 +6,12 @@ import numpy as np
 import torch
 import wandb
 
-from fedml_api.standalone.fedavg.client import Client
+import operator
+
+from fedml_api.standalone.fedti.client import Client
 
 
-class FedAvgAPI(object):
+class FedTiAPI(object):
     def __init__(self, dataset, device, args, model_trainer):
         self.device = device
         self.args = args
@@ -31,14 +33,17 @@ class FedAvgAPI(object):
 
     def _setup_clients(self, train_data_local_num_dict, train_data_local_dict, test_data_local_dict, model_trainer):
         logging.info("############setup_clients (START)#############")
-        for client_idx in range(self.args.client_num_per_round):
+        for client_idx in range(self.args.client_num_in_total):
             c = Client(client_idx, train_data_local_dict[client_idx], test_data_local_dict[client_idx],
-                       train_data_local_num_dict[client_idx], self.args, self.device, model_trainer)
+                       train_data_local_num_dict[client_idx], self.args, self.device, model_trainer, 0, 0, 0, 0)
             self.client_list.append(c)
+        logging.info("number of clients in client_list:" + str(len(self.client_list)))
+        logging.info("type of item in client_list:" + str(type(self.client_list[0])))
         logging.info("############setup_clients (END)#############")
 
     def train(self):
         w_global = self.model_trainer.get_model_params()
+        np.random.seed(self.args.comm_round)
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -49,17 +54,22 @@ class FedAvgAPI(object):
             for scalability: following the original FedAvg algorithm, we uniformly sample a fraction of clients in each round.
             Instead of changing the 'Client' instances, our implementation keeps the 'Client' instances and then updates their local dataset 
             """
-            client_indexes = self._client_sampling(round_idx, self.args.client_num_in_total,
-                                                   self.args.client_num_per_round)
-            logging.info("client_indexes = " + str(client_indexes))
+            # bids init
+            for client in self.client_list:
+                client.update_bid(np.random.randint(20, 50), np.random.rand(), np.random.rand(),
+                                  np.random.randint(10, 50))
 
-            for idx, client in enumerate(self.client_list):
-                # update dataset
-                client_idx = client_indexes[idx]
+            # WDP and Payment
+            # client_indexes = self._client_sampling(round_idx, self.args.client_num_in_total,
+            #                                        self.args.client_num_per_round)
+            client_indexes, payment = self._winners_determination()
+            logging.info("winners_client_indexes = " + str(client_indexes))
+
+            for client_idx in client_indexes:
+                client = self.client_list[int(client_idx)]
                 client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
                                             self.test_data_local_dict[client_idx],
                                             self.train_data_local_num_dict[client_idx])
-
                 # train on new dataset
                 w = client.train(copy.deepcopy(w_global))
                 # self.logger.info("local weights = " + str(w))
@@ -80,11 +90,20 @@ class FedAvgAPI(object):
                 else:
                     self._local_test_on_all_clients(round_idx)
 
+            # sample test IR
+            client_test_index = client_indexes[0]
+            client_test = self.client_list[client_test_index]
+            payment_test = payment[0]
+            submitted_bids_test = client_test.get_cost()
+            wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
+            logging.info(
+                "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
+                    submitted_bids_test))
+
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
             client_indexes = [client_index for client_index in range(client_num_in_total)]
         else:
-            # Incentive Mechanism
             num_clients = min(client_num_per_round, client_num_in_total)
             np.random.seed(round_idx)  # make sure for each comparison, we are selecting the same clients each round
             client_indexes = np.random.choice(range(client_num_in_total), num_clients, replace=False)
@@ -212,3 +231,47 @@ class FedAvgAPI(object):
             raise Exception("Unknown format to log metrics for dataset {}!" % self.args.dataset)
 
         logging.info(stats)
+
+    def _winners_determination(self):
+        winners_indexes = []
+        winners_payment = []
+        candidates = []
+        for client in self.client_list:
+            candidates.append(client.bid)
+
+        # logging.info("average_cost:" + str(average_cost))
+        training_intensity_tot = 0
+        # sort candidates according to the average cost
+        cmp = operator.attrgetter('avg_cost')
+        candidates.sort(key=cmp)
+        candidate_idx = 0
+        while training_intensity_tot < self.args.training_intensity_per_round:
+            if candidate_idx + 1 >= len(candidates):
+                break
+            idx = candidates[candidate_idx].client_idx
+            training_intensity_tot += self.client_list[idx].get_training_intensity()
+
+            second_idx = candidates[candidate_idx + 1].client_idx
+            payment = self._get_payment(idx, second_idx)
+
+            candidate_idx += 1
+            winners_indexes.append(idx)
+            winners_payment.append(payment)
+
+        logging.info("winners: " + str(winners_indexes))
+        return winners_indexes, winners_payment
+
+    def _get_payment(self, opt_index, second_index):
+        client_second_winner = self.client_list[second_index]
+        client_winner = self.client_list[opt_index]
+        payment = client_second_winner.get_average_cost() * client_winner.get_training_intensity() - client_winner.get_time()
+        logging.info("client_winner: avg_cost " + str(client_winner.get_average_cost()) + "time " + str(
+            client_winner.get_time()) + ", cost " + str(
+            client_winner.get_cost()) + ", training_intensity " + str(client_winner.get_training_intensity()))
+        logging.info("client_second_winner: avg_cost " + str(client_winner.get_average_cost()) + "time " + str(
+            client_second_winner.get_time()) + ", cost " + str(
+            client_second_winner.get_cost()) + ", training_intensity " + str(
+            client_second_winner.get_training_intensity()))
+        # logging.info("payment, avg_cost:" + str(client_second_winner.get_average_cost()) + ", intensity: " + str(
+        #     client_winner.get_training_intensity()) + ", time: " + str(client_winner.get_time()))
+        return payment

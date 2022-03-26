@@ -26,7 +26,7 @@ OPT=$12
 
 CI=$13
 
-python3 ./main_fedavg.py \
+python3 ./main_fedti.py \
 --gpu $GPU \
 --dataset $DATASET \
 --data_dir $DATA_PATH \
