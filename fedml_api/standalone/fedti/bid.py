@@ -4,14 +4,16 @@ class Bid:
         self.client_idx = client_idx
         self.training_intensity = training_intensity
         self.cost = cost
+        self.bidding_price = cost
         self.computation_coefficient = computation_coefficient
         self.communication_time = communication_time
         self.avg_cost = 0
         self.time = 0
 
-    def update_bid(self, training_intensity, cost, computation_coefficient, communication_time):
+    def update_bid(self, training_intensity, cost, bidding_price ,computation_coefficient, communication_time):
         self.training_intensity = training_intensity
         self.cost = cost
+        self.bidding_price = bidding_price
         self.computation_coefficient = computation_coefficient
         self.communication_time = communication_time
         self.time = self.training_intensity * self.computation_coefficient + self.communication_time
@@ -27,5 +29,8 @@ class Bid:
         return self.cost
 
     def update_average_cost_from_time(self, t_max):
-        avg_cost = (max(0, self.time - t_max) + self.training_intensity * self.cost) / self.training_intensity
+        # version 4
+        # avg_cost = (max(0, self.time - t_max) + self.training_intensity * self.cost) / self.training_intensity
+        # version 6
+        avg_cost = (max(0, self.time - t_max) + self.cost) / self.training_intensity
         self.avg_cost = avg_cost

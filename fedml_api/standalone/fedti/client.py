@@ -41,8 +41,8 @@ class Client:
         metrics = self.model_trainer.test(test_data, self.device, self.args)
         return metrics
 
-    def update_bid(self, training_intensity, cost, computation_coefficient, communication_time):
-        self.bid.update_bid(training_intensity, cost, computation_coefficient, communication_time)
+    def update_bid(self, training_intensity, cost, bidding_price, computation_coefficient, communication_time):
+        self.bid.update_bid(training_intensity, cost, bidding_price ,computation_coefficient, communication_time)
 
     def get_average_cost(self):
         return self.bid.get_average_cost()

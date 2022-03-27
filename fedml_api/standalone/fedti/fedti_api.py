@@ -60,12 +60,12 @@ class FedTiAPI(object):
             """
             # bids init
             for client in self.client_list:
-                client.update_bid(np.random.randint(20, 50), np.random.rand(), np.random.rand(),
+                client.update_bid(np.random.randint(50, 100), np.random.randint(10, 50), np.random.rand()*0.1,
                                   np.random.randint(10, 50))
 
-            # WDP and Payment
+            # WDP and Payment version 1,2,5
             # client_indexes, payment = self._winners_determination()
-            # version 2
+            # version 3,4,6
             client_indexes, payment = self._winners_determination()
 
             logging.info("winners_client_indexes = " + str(client_indexes))
@@ -106,7 +106,6 @@ class FedTiAPI(object):
             final_payment_plot.append(client_test.get_training_intensity() * payment_test)
             bidding_price_plot.append(submitted_bids_test)
 
-            # wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
             logging.info(
                 "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
                     submitted_bids_test))
@@ -283,7 +282,7 @@ class FedTiAPI(object):
         logging.info("winners: " + str(winners_indexes))
         return winners_indexes, winners_payment
 
-    # version 3 and 4
+    # version 3, 4 and 6
     def _winners_determination_2(self):
         winners_indexes = []
         winners_payment = []
@@ -345,5 +344,7 @@ class FedTiAPI(object):
         # version 3
         # payment = client_winner.get_training_intensity() * client_second_winner.get_average_cost() - r_t
         # version 4
+        # payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
+        # version 6
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
         return payment
