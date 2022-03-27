@@ -48,6 +48,11 @@ class FedTiAPI(object):
         payment_plot = []
         final_payment_plot = []
         bidding_price_plot = []
+
+        utility_list = []
+        truth_ratio = 0.2
+        truth_ratio_list = []
+        round_truth_freq = self.args.comm_round // 8
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -58,10 +63,12 @@ class FedTiAPI(object):
             for scalability: following the original FedAvg algorithm, we uniformly sample a fraction of clients in each round.
             Instead of changing the 'Client' instances, our implementation keeps the 'Client' instances and then updates their local dataset 
             """
+
             # bids init
             for client in self.client_list:
-                client.update_bid(np.random.randint(50, 100), np.random.randint(10, 50), np.random.rand()*0.1,
-                                  np.random.randint(10, 50))
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(10, 50),
+                                  truth_ratio=truth_ratio, computation_coefficient=np.random.rand() * 0.1,
+                                  communication_time=np.random.randint(10, 50))
 
             # WDP and Payment version 1,2,5
             # client_indexes, payment = self._winners_determination()
@@ -71,7 +78,7 @@ class FedTiAPI(object):
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
-            for client_idx in client_indexes:
+            for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
                 client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
                                             self.test_data_local_dict[client_idx],
@@ -80,6 +87,8 @@ class FedTiAPI(object):
                 w = client.train(copy.deepcopy(w_global))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
+                # distribute payment
+                client.receive_payment(payment[idx])
 
             # update global weights
             w_global = self._aggregate(w_locals)
@@ -96,22 +105,28 @@ class FedTiAPI(object):
                 else:
                     self._local_test_on_all_clients(round_idx)
 
-            # sample test IR
-            client_test_index = client_indexes[0]
-            client_test = self.client_list[client_test_index]
-            payment_test = payment[0]
-            submitted_bids_test = client_test.get_cost()
-            # add to plot list
-            payment_plot.append(payment_test)
-            final_payment_plot.append(client_test.get_training_intensity() * payment_test)
-            bidding_price_plot.append(submitted_bids_test)
+                # sample test IR
+                client_test_index = client_indexes[0]
+                client_test = self.client_list[client_test_index]
+                payment_test = payment[0]
+                submitted_bids_test = client_test.get_cost()
+                # add to plot list
+                payment_plot.append(payment_test)
+                final_payment_plot.append(client_test.get_training_intensity() * payment_test)
+                bidding_price_plot.append(submitted_bids_test)
 
-            logging.info(
-                "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
-                    submitted_bids_test))
-            # wandb visualize
-            wandb.log({"number of winning clients": len(client_indexes)})
-            wandb.log({"running time in every round": t_max})
+                logging.info(
+                    "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
+                        submitted_bids_test))
+                # wandb visualize
+                wandb.log({"number of winning clients": len(client_indexes)})
+                wandb.log({"running time in every round": t_max})
+
+            if round_idx % round_truth_freq == 0:
+                truth_ratio_list.append(truth_ratio)
+                truth_ratio += 0.2
+                client_test_index = client_indexes[0]
+                utility_list.append(self.client_list[client_test_index].get_utility())
 
         # plot IR chart
         wandb.log({"Performance on individual rationality": wandb.plot.line_series(
@@ -120,6 +135,10 @@ class FedTiAPI(object):
             keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
             title="Performance on individual rationality"
         )})
+        wandb.log(
+            {"Performance on truthfulness": wandb.plot.line(xs=[i for i in np.arange(0.2, 2, 0.2)],
+                                                            ys=[i for i in utility_list], keys=["utility"],
+                                                            title="performance on truthfulness")})
 
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
@@ -334,7 +353,7 @@ class FedTiAPI(object):
         # version 2
         # payment = client_second_winner.get_average_cost() - client_winner.get_time() / client_winner.get_training_intensity()
         # version 5
-        payment = client_second_winner.get_average_cost() - client_winner.get_time()/client_winner.get_training_intensity()
+        payment = client_second_winner.get_average_cost() - client_winner.get_time() / client_winner.get_training_intensity()
         return payment
 
     def _get_payment_2(self, opt_index, second_index, t_max):

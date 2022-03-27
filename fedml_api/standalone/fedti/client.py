@@ -14,7 +14,8 @@ class Client:
         self.args = args
         self.device = device
         self.model_trainer = model_trainer
-        self.bid = Bid(client_idx, training_intensity, cost, computation_coefficient, communication_time)
+        self.bid = Bid(client_idx, training_intensity, cost, cost, computation_coefficient, communication_time)
+        self.payment = 0
 
     def update_local_dataset(self, client_idx, local_training_data, local_test_data, local_sample_number):
         self.client_idx = client_idx
@@ -41,8 +42,9 @@ class Client:
         metrics = self.model_trainer.test(test_data, self.device, self.args)
         return metrics
 
-    def update_bid(self, training_intensity, cost, bidding_price, computation_coefficient, communication_time):
-        self.bid.update_bid(training_intensity, cost, bidding_price ,computation_coefficient, communication_time)
+    def update_bid(self, training_intensity, cost, truth_ratio, computation_coefficient, communication_time):
+        self.bid.update_bid(training_intensity, cost, truth_ratio * cost, computation_coefficient,
+                            communication_time)
 
     def get_average_cost(self):
         return self.bid.get_average_cost()
@@ -58,3 +60,9 @@ class Client:
 
     def update_average_cost_from_time(self, t_max):
         self.bid.update_average_cost_from_time(t_max)
+
+    def receive_payment(self, payment):
+        self.payment = payment
+
+    def get_utility(self):
+        return self.get_training_intensity()*self.payment - self.get_cost()

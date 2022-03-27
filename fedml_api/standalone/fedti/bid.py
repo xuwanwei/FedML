@@ -1,16 +1,17 @@
 class Bid:
 
-    def __init__(self, client_idx, training_intensity, cost, computation_coefficient, communication_time):
+    def __init__(self, client_idx, training_intensity, cost, bidding_price, computation_coefficient,
+                 communication_time):
         self.client_idx = client_idx
         self.training_intensity = training_intensity
         self.cost = cost
-        self.bidding_price = cost
+        self.bidding_price = bidding_price
         self.computation_coefficient = computation_coefficient
         self.communication_time = communication_time
         self.avg_cost = 0
         self.time = 0
 
-    def update_bid(self, training_intensity, cost, bidding_price ,computation_coefficient, communication_time):
+    def update_bid(self, training_intensity, cost, bidding_price, computation_coefficient, communication_time):
         self.training_intensity = training_intensity
         self.cost = cost
         self.bidding_price = bidding_price
