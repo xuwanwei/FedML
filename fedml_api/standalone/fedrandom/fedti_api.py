@@ -11,7 +11,7 @@ import operator
 from fedml_api.standalone.fedti.client import Client
 
 
-class FedTiAPI(object):
+class FedRandomAPI(object):
     def __init__(self, dataset, device, args, model_trainer):
         self.device = device
         self.args = args
@@ -64,10 +64,7 @@ class FedTiAPI(object):
                                   np.random.randint(10, 50))
 
             # WDP and Payment
-            # client_indexes, payment = self._winners_determination()
-            # version 2
-            client_indexes, payment = self._winners_determination()
-
+            client_indexes, payment = self._client_sampling(self.args.comm_round, self.args.client_num_in_total, self.args.client_num_per_round)
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -78,6 +75,7 @@ class FedTiAPI(object):
                                             self.train_data_local_num_dict[client_idx])
                 # train on new dataset
                 w = client.train(copy.deepcopy(w_global))
+                # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
 
@@ -266,7 +264,6 @@ class FedTiAPI(object):
         cmp = operator.attrgetter('avg_cost')
         candidates.sort(key=cmp)
         candidate_idx = 0
-
         while training_intensity_tot < self.args.training_intensity_per_round:
             if candidate_idx + 1 >= len(candidates):
                 break
@@ -283,67 +280,8 @@ class FedTiAPI(object):
         logging.info("winners: " + str(winners_indexes))
         return winners_indexes, winners_payment
 
-    # version 3 and 4
-    def _winners_determination_2(self):
-        winners_indexes = []
-        winners_payment = []
-        candidates = []
-        for client in self.client_list:
-            candidates.append(client.bid)
-
-        training_intensity_tot = 0
-
-        t_max = 0
-
-        while training_intensity_tot < self.args.training_intensity_per_round:
-            if len(candidates) <= 1:
-                logging.info("Not enough client to fulfill training intensity guarantee")
-                break
-
-            # update avg_cost
-            # find the smallest two client
-            winner_idx = candidates[0].client_idx
-            winner_second_idx = -1
-            candidates[0].update_average_cost_from_time(t_max)
-            winner_cost = candidates[0].get_average_cost()
-            for bid in candidates[1:]:
-                bid.update_average_cost_from_time(t_max)
-                if winner_cost > bid.get_average_cost():
-                    winner_second_idx = winner_idx
-                    winner_idx = bid.client_idx
-                    winner_cost = bid.get_average_cost()
-                elif winner_second_idx == -1:
-                    winner_second_idx = bid.client_idx
-
-            training_intensity_tot += self.client_list[winner_idx].get_training_intensity()
-
-            payment = self._get_payment_2(winner_idx, winner_second_idx, t_max)
-
-            winners_indexes.append(winner_idx)
-            winners_payment.append(payment)
-            candidates.remove(self.client_list[winner_idx].bid)
-            t_max = max(t_max, self.client_list[winner_idx].get_time())
-
-        logging.info("winners: " + str(winners_indexes))
-        return winners_indexes, winners_payment
-
     def _get_payment(self, opt_index, second_index):
         client_second_winner = self.client_list[second_index]
         client_winner = self.client_list[opt_index]
-        # version 1
-        # payment = client_winner.get_training_intensity() * client_second_winner.get_average_cost() - client_winner.get_time()
-        # version 2
-        # payment = client_second_winner.get_average_cost() - client_winner.get_time() / client_winner.get_training_intensity()
-        # version 5
-        payment = client_second_winner.get_average_cost() - client_winner.get_time()/client_winner.get_training_intensity()
-        return payment
-
-    def _get_payment_2(self, opt_index, second_index, t_max):
-        client_second_winner = self.client_list[second_index]
-        client_winner = self.client_list[opt_index]
-        r_t = max(0, client_winner.get_time() - t_max)
-        # version 3
-        # payment = client_winner.get_training_intensity() * client_second_winner.get_average_cost() - r_t
-        # version 4
-        payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
+        payment = client_second_winner.get_average_cost() - client_winner.get_time() / client_winner.get_training_intensity()
         return payment

@@ -55,3 +55,6 @@ class Client:
 
     def get_cost(self):
         return self.bid.get_cost()
+
+    def update_average_cost_from_time(self, t_max):
+        self.bid.update_average_cost_from_time(t_max)

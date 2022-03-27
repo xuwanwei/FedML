@@ -25,3 +25,7 @@ class Bid:
 
     def get_cost(self):
         return self.cost
+
+    def update_average_cost_from_time(self, t_max):
+        avg_cost = (max(0, self.time - t_max) + self.training_intensity * self.cost) / self.training_intensity
+        self.avg_cost = avg_cost
