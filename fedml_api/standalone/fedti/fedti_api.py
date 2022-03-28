@@ -73,7 +73,7 @@ class FedTiAPI(object):
             # WDP and Payment version 1,2,5
             # client_indexes, payment = self._winners_determination()
             # version 3,4,6
-            client_indexes, payment = self._winners_determination()
+            client_indexes, payment = self._winners_determination_2()
 
             logging.info("winners_client_indexes = " + str(client_indexes))
 
