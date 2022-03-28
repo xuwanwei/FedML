@@ -65,4 +65,4 @@ class Client:
         self.payment = payment
 
     def get_utility(self):
-        return self.get_training_intensity()*self.payment - self.get_cost()
+        return self.get_training_intensity() * self.payment - self.get_cost()

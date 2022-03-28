@@ -78,6 +78,7 @@ class FedTiAPI(object):
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
+            # train on winners
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
                 client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
@@ -135,10 +136,14 @@ class FedTiAPI(object):
             keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
             title="Performance on individual rationality"
         )})
+        truth_data = [[x, y] for (x, y) in zip(np.arange(0.2, 2, 0.2), utility_list)]
+        truth_table = wandb.Table(data=truth_data, columns=["The ratio of the submitted bid to the truthful cost",
+                                                            "The utility of a single buyers"])
         wandb.log(
-            {"Performance on truthfulness": wandb.plot.line(xs=[i for i in np.arange(0.2, 2, 0.2)],
-                                                            ys=[i for i in utility_list], keys=["utility"],
-                                                            title="performance on truthfulness")})
+            {"Performance on truthfulness": wandb.plot.line(truth_table,
+                                                            "The ratio of the submitted bid to the truthful cost",
+                                                            "The utility of a single buyers",
+                                                            title="Performance on truthfulness")})
 
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
