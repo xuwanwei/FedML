@@ -30,11 +30,10 @@ class Bid:
         return self.cost
 
     def update_average_cost_from_time(self, t_max):
-        # version 4
-        # avg_cost = (max(0, self.time - t_max) + self.training_intensity * self.cost) / self.training_intensity
-        # version 6
-        avg_cost = (max(0, self.time - t_max) + self.cost) / self.training_intensity
-        self.avg_cost = avg_cost
+        # version 2
+        # avg_cost = (max(0, self.time - t_max) + self.bidding_price) / self.training_intensity
+        # version 3
+        self.avg_cost = (max(t_max, self.time) + self.bidding_price) / self.training_intensity
 
     def update_bid_with_ratio(self, truth_ratio):
         self.bidding_price = truth_ratio * self.cost

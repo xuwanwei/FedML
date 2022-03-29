@@ -45,6 +45,8 @@ class Client:
     def update_bid(self, training_intensity, cost, truth_ratio, computation_coefficient, communication_time):
         self.bid.update_bid(training_intensity, cost, truth_ratio * cost, computation_coefficient,
                             communication_time)
+        # after updating bid, the payment will be set to 0
+        self.payment = 0
 
     def get_average_cost(self):
         return self.bid.get_average_cost()
