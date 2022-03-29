@@ -283,7 +283,7 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    parser = add_args(argparse.ArgumentParser(description='FedAvg-standalone'))
+    parser = add_args(argparse.ArgumentParser(description='FedTi-standalone'))
     args = parser.parse_args()
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
@@ -316,3 +316,8 @@ if __name__ == "__main__":
 
     fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
     fedtiAPI.train()
+
+    for truth_ratio in np.arange(0.2, 2, 0.2):
+        client_utility = fedtiAPI.train_for_truthfulness(truth_ratio, 1, 1, False)
+        wandb.log({"performance on truthfulness": client_utility})
+

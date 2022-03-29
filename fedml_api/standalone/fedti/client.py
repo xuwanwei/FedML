@@ -65,4 +65,7 @@ class Client:
         self.payment = payment
 
     def get_utility(self):
-        return self.get_training_intensity() * self.payment - self.get_cost()
+        return max(0, self.get_training_intensity() * self.payment - self.get_cost())
+
+    def update_truthfulness(self, truth_ratio):
+        self.bid.update_bid_with_ratio(truth_ratio)

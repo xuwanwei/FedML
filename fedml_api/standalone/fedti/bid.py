@@ -18,7 +18,7 @@ class Bid:
         self.computation_coefficient = computation_coefficient
         self.communication_time = communication_time
         self.time = self.training_intensity * self.computation_coefficient + self.communication_time
-        self.avg_cost = (self.time + self.cost) / self.training_intensity
+        self.avg_cost = (self.time + self.bidding_price) / self.training_intensity
 
     def get_time(self):
         return self.time
@@ -35,3 +35,6 @@ class Bid:
         # version 6
         avg_cost = (max(0, self.time - t_max) + self.cost) / self.training_intensity
         self.avg_cost = avg_cost
+
+    def update_bid_with_ratio(self, truth_ratio):
+        self.bidding_price = truth_ratio * self.cost
