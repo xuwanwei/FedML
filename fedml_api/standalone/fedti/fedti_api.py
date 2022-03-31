@@ -79,9 +79,9 @@ class FedTiAPI(object):
 
             # WDP and Payment
             # version 1
-            # client_indexes, payment = self._winners_determination()
+            client_indexes, payment = self._winners_determination()
             # version 2
-            client_indexes, payment = self._winners_determination_2()
+            # client_indexes, payment = self._winners_determination_2()
             # version 3
             # client_indexes, payment = self._winners_determination_3()
 
@@ -123,9 +123,10 @@ class FedTiAPI(object):
                         self._local_test_on_all_clients(round_idx)
 
                     # sample test IR
-                    client_test_index = client_indexes[0]
+                    client_test_id = np.random.randint(0, len(client_indexes))
+                    client_test_index = client_indexes[client_test_id]
+                    payment_test = payment[client_test_id]
                     client_test = self.client_list[client_test_index]
-                    payment_test = payment[0]
                     submitted_bids_test = client_test.get_cost()
                     # add to plot list
                     payment_plot.append(payment_test)
@@ -420,7 +421,6 @@ class FedTiAPI(object):
         client_winner = self.client_list[opt_index]
         # version 2
         r_t = max(0, client_winner.get_time() - t_max)
-        # version 3
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
         return payment
 
