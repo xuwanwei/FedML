@@ -79,11 +79,11 @@ class FedTiAPI(object):
 
             # WDP and Payment
             # version 1
-            client_indexes, payment = self._winners_determination()
+            # client_indexes, payment = self._winners_determination()
             # version 2
             # client_indexes, payment = self._winners_determination_2()
             # version 3
-            # client_indexes, payment = self._winners_determination_3()
+            client_indexes, payment = self._winners_determination_3()
 
             logging.info("winners_client_indexes = " + str(client_indexes))
 
@@ -293,6 +293,7 @@ class FedTiAPI(object):
         candidates.sort(key=cmp)
         candidate_idx = 0
 
+        t_max = 0
         while training_intensity_tot < self.args.training_intensity_per_round:
             if candidate_idx + 1 >= len(candidates):
                 break
@@ -305,8 +306,11 @@ class FedTiAPI(object):
             candidate_idx += 1
             winners_indexes.append(idx)
             winners_payment.append(payment)
+            t_max = max(t_max, self.client_list[idx].get_time())
+            logging.info('winner {} time: {}'.format(idx, self.client_list[idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
+        logging.info('winner t_max:{}'.format(t_max))
         return winners_indexes, winners_payment
 
     # version 2
@@ -355,8 +359,10 @@ class FedTiAPI(object):
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
+            logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
+        logging.info('winner t_max:{}'.format(t_max))
         return winners_indexes, winners_payment
 
     # version 3
@@ -405,8 +411,10 @@ class FedTiAPI(object):
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
+            logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
+        logging.info('winner t_max:{}'.format(t_max))
         return winners_indexes, winners_payment
 
     def _get_payment(self, opt_index, second_index):
