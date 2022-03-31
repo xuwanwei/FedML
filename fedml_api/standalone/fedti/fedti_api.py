@@ -68,7 +68,7 @@ class FedTiAPI(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(10, 50),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(5, 10),
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
@@ -100,16 +100,17 @@ class FedTiAPI(object):
                 t_max = max(t_max, client.get_time())
                 # distribute payment
                 client.receive_payment(payment[idx])
-                logging.info("average cost of winners bid:" + str(client.get_average_cost()))
+                logging.info(
+                    'winners bid{}: cost {}, time{}'.format(client_idx, client.get_average_cost(), client.get_time()))
 
-            # update global weights
-            w_global = self._aggregate(w_locals)
-            self.model_trainer.set_model_params(w_global)
+                # update global weights
+                w_global = self._aggregate(w_locals)
+                self.model_trainer.set_model_params(w_global)
 
-            # get utility for truthfulness test
-            if round_idx == truth_round_idx:
-                logging.info("average cost of truth bid:" + str(self.client_list[truth_index].get_average_cost()))
-                return self.client_list[truth_index].get_utility()
+                # get utility for truthfulness test
+                if round_idx == truth_round_idx:
+                    # logging.info("average cost of truth bid:" + str(self.client_list[truth_index].get_average_cost()))
+                    return self.client_list[truth_index].get_utility()
 
             # test results at last round
             if show_info:
@@ -307,7 +308,7 @@ class FedTiAPI(object):
             winners_indexes.append(idx)
             winners_payment.append(payment)
             t_max = max(t_max, self.client_list[idx].get_time())
-            logging.info('winner {} time: {}'.format(idx, self.client_list[idx].get_time()))
+            # logging.info('winner {} time: {}'.format(idx, self.client_list[idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
@@ -359,7 +360,7 @@ class FedTiAPI(object):
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
-            logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
+            # logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
@@ -411,7 +412,7 @@ class FedTiAPI(object):
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
-            logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
+            # logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
@@ -440,12 +441,12 @@ class FedTiAPI(object):
         # version 3
         r_t = max(client_winner.get_time(), t_max)
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
-        logging.info(
-            'index:{}, avg_cost:{}, second cost{}: {}, r_t:{}, intensity:{}\t payment:{}'.format(opt_index,
-                                                                                                 client_winner.get_average_cost(),
-                                                                                                 second_index,
-                                                                                                 client_second_winner.get_average_cost(),
-                                                                                                 r_t,
-                                                                                                 client_winner.get_training_intensity(),
-                                                                                                 payment))
+        # logging.info(
+        #     'index:{}, avg_cost:{}, second cost{}: {}, r_t:{}, intensity:{}\t payment:{}'.format(opt_index,
+        #                                                                                          client_winner.get_average_cost(),
+        #                                                                                          second_index,
+        #                                                                                          client_second_winner.get_average_cost(),
+        #                                                                                          r_t,
+        #                                                                                          client_winner.get_training_intensity(),
+        #                                                                                          payment))
         return payment
