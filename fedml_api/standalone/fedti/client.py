@@ -71,3 +71,6 @@ class Client:
 
     def update_truthfulness(self, truth_ratio):
         self.bid.update_bid_with_ratio(truth_ratio)
+
+    def get_bidding_price(self):
+        return self.bid.bidding_price

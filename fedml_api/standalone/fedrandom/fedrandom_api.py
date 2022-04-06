@@ -45,9 +45,9 @@ class FedRandomAPI(object):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
-        payment_plot = []
-        final_payment_plot = []
-        bidding_price_plot = []
+        # payment_plot = []
+        # final_payment_plot = []
+        # bidding_price_plot = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -60,31 +60,33 @@ class FedRandomAPI(object):
             """
             # bids init
             for client in self.client_list:
-                client.update_bid(np.random.randint(20, 50), np.random.rand(), np.random.rand(),
-                                  np.random.randint(10, 50))
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(5, 10),
+                                  truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
+                                  communication_time=np.random.randint(10, 15))
 
             # WDP and Payment
-            client_indexes, payment = self._client_sampling(self.args.comm_round, self.args.client_num_in_total, self.args.client_num_per_round)
+            client_indexes, payment = self._client_sampling(self.args.client_num_in_total,
+                                                            self.args.training_intensity_per_round)
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
-            for client_idx in client_indexes:
+            for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
                 client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
                                             self.test_data_local_dict[client_idx],
                                             self.train_data_local_num_dict[client_idx])
                 # train on new dataset
                 w = client.train(copy.deepcopy(w_global))
-                # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
+                # distribute payment
+                client.receive_payment(payment[idx])
 
             # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
 
-            # test results
-            # at last round
+            # test results at last round
             if round_idx == self.args.comm_round - 1:
                 self._local_test_on_all_clients(round_idx)
             # per {frequency_of_the_test} round
@@ -94,41 +96,44 @@ class FedRandomAPI(object):
                 else:
                     self._local_test_on_all_clients(round_idx)
 
-            # sample test IR
-            client_test_index = client_indexes[0]
-            client_test = self.client_list[client_test_index]
-            payment_test = payment[0]
-            submitted_bids_test = client_test.get_cost()
-            # add to plot list
-            payment_plot.append(payment_test)
-            final_payment_plot.append(client_test.get_training_intensity() * payment_test)
-            bidding_price_plot.append(submitted_bids_test)
+                # sample test IR
+                # client_test_index = client_indexes[0]
+                # client_test = self.client_list[client_test_index]
+                # payment_test = payment[0]
+                # submitted_bids_test = client_test.get_cost()
+                # add to plot list
+                # payment_plot.append(payment_test)
+                # final_payment_plot.append(client_test.get_training_intensity() * payment_test)
+                # bidding_price_plot.append(submitted_bids_test)
 
-            # wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
-            logging.info(
-                "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
-                    submitted_bids_test))
-            # wandb visualize
-            wandb.log({"number of winning clients": len(client_indexes)})
-            wandb.log({"running time in every round": t_max})
+                # wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
+                # logging.info(
+                #     "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
+                #         submitted_bids_test))
+                # wandb visualize
+                wandb.log({"number of winning clients": len(client_indexes)})
+                wandb.log({"running time in every round": t_max})
 
-        # plot IR chart
-        wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-            xs=[i for i in range(self.args.comm_round)],
-            ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
-            keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
-            title="Performance on individual rationality"
-        )})
+            # plot IR chart
+            # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+            #     xs=[i for i in range(self.args.comm_round)],
+            #     ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
+            #     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
+            #     title="Performance on individual rationality"
+            # )})
 
-    def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
-        if client_num_in_total == client_num_per_round:
-            client_indexes = [client_index for client_index in range(client_num_in_total)]
-        else:
-            num_clients = min(client_num_per_round, client_num_in_total)
-            np.random.seed(round_idx)  # make sure for each comparison, we are selecting the same clients each round
-            client_indexes = np.random.choice(range(client_num_in_total), num_clients, replace=False)
-        logging.info("client_indexes = %s" % str(client_indexes))
-        return client_indexes
+    def _client_sampling(self, client_num_in_total, training_intensity):
+        client_indexes = []
+        client_payment = []
+        training_intensity_tot = 0
+        while training_intensity_tot < training_intensity:
+            idx = np.random.randint(0, client_num_in_total)
+            if client_indexes.count(idx):
+                continue
+            client_indexes.append(idx)
+            client_payment.append(self.client_list[idx].get_bidding_price())
+            training_intensity_tot += self.client_list[idx].get_training_intensity()
+        return client_indexes, client_payment
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)

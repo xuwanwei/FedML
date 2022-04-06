@@ -84,7 +84,6 @@ class FedTiAPI(object):
             # client_indexes, payment = self._winners_determination_2()
             # version 3
             client_indexes, payment = self._winners_determination_3()
-
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -149,16 +148,6 @@ class FedTiAPI(object):
                     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
                     title="Performance on individual rationality"
                 )})
-
-    def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
-        if client_num_in_total == client_num_per_round:
-            client_indexes = [client_index for client_index in range(client_num_in_total)]
-        else:
-            num_clients = min(client_num_per_round, client_num_in_total)
-            np.random.seed(round_idx)  # make sure for each comparison, we are selecting the same clients each round
-            client_indexes = np.random.choice(range(client_num_in_total), num_clients, replace=False)
-        logging.info("client_indexes = %s" % str(client_indexes))
-        return client_indexes
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)
