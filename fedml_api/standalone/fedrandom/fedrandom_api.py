@@ -6,9 +6,7 @@ import numpy as np
 import torch
 import wandb
 
-import operator
-
-from fedml_api.standalone.fedti.client import Client
+from fedml_api.utils.client import Client
 
 
 class FedRandomAPI(object):
@@ -45,9 +43,6 @@ class FedRandomAPI(object):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
-        # payment_plot = []
-        # final_payment_plot = []
-        # bidding_price_plot = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -60,7 +55,7 @@ class FedRandomAPI(object):
             """
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(5, 10),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(2, 5),
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
@@ -95,32 +90,8 @@ class FedRandomAPI(object):
                     self._local_test_on_validation_set(round_idx)
                 else:
                     self._local_test_on_all_clients(round_idx)
-
-                # sample test IR
-                # client_test_index = client_indexes[0]
-                # client_test = self.client_list[client_test_index]
-                # payment_test = payment[0]
-                # submitted_bids_test = client_test.get_cost()
-                # add to plot list
-                # payment_plot.append(payment_test)
-                # final_payment_plot.append(client_test.get_training_intensity() * payment_test)
-                # bidding_price_plot.append(submitted_bids_test)
-
-                # wandb.log({"payment": payment_test, "bidding_price": submitted_bids_test})
-                # logging.info(
-                #     "test IR, index: " + str(client_test_index) + " payment: " + str(payment_test) + " cost: " + str(
-                #         submitted_bids_test))
-                # wandb visualize
                 wandb.log({"number of winning clients": len(client_indexes)})
                 wandb.log({"running time in every round": t_max})
-
-            # plot IR chart
-            # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-            #     xs=[i for i in range(self.args.comm_round)],
-            #     ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
-            #     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
-            #     title="Performance on individual rationality"
-            # )})
 
     def _client_sampling(self, client_num_in_total, training_intensity):
         client_indexes = []
@@ -256,37 +227,3 @@ class FedRandomAPI(object):
             raise Exception("Unknown format to log metrics for dataset {}!" % self.args.dataset)
 
         logging.info(stats)
-
-    def _winners_determination(self):
-        winners_indexes = []
-        winners_payment = []
-        candidates = []
-        for client in self.client_list:
-            candidates.append(client.bid)
-
-        training_intensity_tot = 0
-        # sort candidates according to the average cost
-        cmp = operator.attrgetter('avg_cost')
-        candidates.sort(key=cmp)
-        candidate_idx = 0
-        while training_intensity_tot < self.args.training_intensity_per_round:
-            if candidate_idx + 1 >= len(candidates):
-                break
-            idx = candidates[candidate_idx].client_idx
-            training_intensity_tot += self.client_list[idx].get_training_intensity()
-
-            second_idx = candidates[candidate_idx + 1].client_idx
-            payment = self._get_payment(idx, second_idx)
-
-            candidate_idx += 1
-            winners_indexes.append(idx)
-            winners_payment.append(payment)
-
-        logging.info("winners: " + str(winners_indexes))
-        return winners_indexes, winners_payment
-
-    def _get_payment(self, opt_index, second_index):
-        client_second_winner = self.client_list[second_index]
-        client_winner = self.client_list[opt_index]
-        payment = client_second_winner.get_average_cost() - client_winner.get_time() / client_winner.get_training_intensity()
-        return payment

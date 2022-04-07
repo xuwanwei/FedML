@@ -1,5 +1,4 @@
-import logging
-from fedml_api.standalone.fedti.bid import Bid
+from fedml_api.utils.bid import Bid
 
 
 class Client:

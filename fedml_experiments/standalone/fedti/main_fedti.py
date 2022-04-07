@@ -279,6 +279,34 @@ def custom_model_trainer(args, model):
         return MyModelTrainerCLS(model)
 
 
+def test_truthfulness(fedtiAPI):
+    truth_ratio_list = []
+    utility_list = []
+    logging.info("####################Truthfulness#####################")
+    for truth_ratio in np.arange(0.2, 2, 0.2):
+        logging.info("Ratio:" + str(truth_ratio))
+        client_utility = fedtiAPI.train_for_truthfulness(truth_ratio, 1, 0, False)
+        truth_ratio_list.append(truth_ratio)
+        utility_list.append(client_utility)
+
+    logging.info("####################End##############################")
+    logging.info("utility list:" + str(utility_list))
+    truth_data = [[x, y] for (x, y) in zip(truth_ratio_list, utility_list)]
+    truth_table = wandb.Table(data=truth_data, columns=["The ratio of the submitted bid to the truthful cost",
+                                                        "The utility of a single buyers"])
+    wandb.log(
+        {"Performance on truthfulness": wandb.plot.line(truth_table,
+                                                        "The ratio of the submitted bid to the truthful cost",
+                                                        "The utility of a single buyers",
+                                                        title="Performance on truthfulness")})
+
+# def test_social_cost_with_training_intensity(fedTiAPI):
+    # for training_intensity in np.arange()
+
+def test_running_time_with_training_intensity(fedTiAPI):
+    for training_intensity in np.arange(500, 2500, 50)
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     logger = logging.getLogger()
@@ -318,24 +346,5 @@ if __name__ == "__main__":
     fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
     fedtiAPI.train()
 
-    TEST_TRUTHFULNESS = False
-    if TEST_TRUTHFULNESS:
-        truth_ratio_list = []
-        utility_list = []
-        logging.info("####################Truthfulness#####################")
-        for truth_ratio in np.arange(0.2, 2, 0.2):
-            logging.info("Ratio:" + str(truth_ratio))
-            client_utility = fedtiAPI.train_for_truthfulness(truth_ratio, 1, 0, False)
-            truth_ratio_list.append(truth_ratio)
-            utility_list.append(client_utility)
+    # test_truthfulness(fedtiAPI)
 
-        logging.info("####################End##############################")
-        logging.info("utility list:" + str(utility_list))
-        truth_data = [[x, y] for (x, y) in zip(truth_ratio_list, utility_list)]
-        truth_table = wandb.Table(data=truth_data, columns=["The ratio of the submitted bid to the truthful cost",
-                                                            "The utility of a single buyers"])
-        wandb.log(
-            {"Performance on truthfulness": wandb.plot.line(truth_table,
-                                                            "The ratio of the submitted bid to the truthful cost",
-                                                            "The utility of a single buyers",
-                                                            title="Performance on truthfulness")})

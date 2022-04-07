@@ -8,7 +8,7 @@ import wandb
 
 import operator
 
-from fedml_api.standalone.fedti.client import Client
+from fedml_api.utils.client import Client
 
 
 class FedTiAPI(object):
@@ -68,7 +68,7 @@ class FedTiAPI(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(5, 10),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(2, 5),
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
@@ -79,11 +79,11 @@ class FedTiAPI(object):
 
             # WDP and Payment
             # version 1
-            # client_indexes, payment = self._winners_determination()
+            client_indexes, payment = self._winners_determination()
             # version 2
             # client_indexes, payment = self._winners_determination_2()
             # version 3
-            client_indexes, payment = self._winners_determination_3()
+            # client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -102,14 +102,14 @@ class FedTiAPI(object):
                 logging.info(
                     'winners bid{}: cost {}, time{}'.format(client_idx, client.get_average_cost(), client.get_time()))
 
-                # update global weights
-                w_global = self._aggregate(w_locals)
-                self.model_trainer.set_model_params(w_global)
+            # update global weights
+            w_global = self._aggregate(w_locals)
+            self.model_trainer.set_model_params(w_global)
 
-                # get utility for truthfulness test
-                if round_idx == truth_round_idx:
-                    # logging.info("average cost of truth bid:" + str(self.client_list[truth_index].get_average_cost()))
-                    return self.client_list[truth_index].get_utility()
+            # get utility for truthfulness test
+            if round_idx == truth_round_idx:
+                # logging.info("average cost of truth bid:" + str(self.client_list[truth_index].get_average_cost()))
+                return self.client_list[truth_index].get_utility()
 
             # test results at last round
             if show_info:
@@ -141,13 +141,13 @@ class FedTiAPI(object):
                     wandb.log({"number of winning clients": len(client_indexes)})
                     wandb.log({"running time in every round": t_max})
 
-                # plot IR chart
-                wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-                    xs=[i for i in range(self.args.comm_round)],
-                    ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
-                    keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
-                    title="Performance on individual rationality"
-                )})
+                    # plot IR chart
+                    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+                    #     xs=[i for i in range(self.args.comm_round)],
+                    #     ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
+                    #     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
+                    #     title="Performance on individual rationality"
+                    # )})
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)
@@ -401,7 +401,6 @@ class FedTiAPI(object):
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
-            # logging.info('winner {} time:{}'.format(winner_idx, self.client_list[winner_idx].get_time()))
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
@@ -430,12 +429,4 @@ class FedTiAPI(object):
         # version 3
         r_t = max(client_winner.get_time(), t_max)
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
-        # logging.info(
-        #     'index:{}, avg_cost:{}, second cost{}: {}, r_t:{}, intensity:{}\t payment:{}'.format(opt_index,
-        #                                                                                          client_winner.get_average_cost(),
-        #                                                                                          second_index,
-        #                                                                                          client_second_winner.get_average_cost(),
-        #                                                                                          r_t,
-        #                                                                                          client_winner.get_training_intensity(),
-        #                                                                                          payment))
         return payment
