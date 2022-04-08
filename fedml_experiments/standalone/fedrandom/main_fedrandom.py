@@ -278,6 +278,13 @@ def custom_model_trainer(args, model):
         return MyModelTrainerCLS(model)
 
 
+def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
+    for training_intensity in np.arange(200, 2000, 200):
+        args.training_intensity_per_round = training_intensity
+        fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
+        wandb.log({"running time": fedrandomAPI.train(False)})
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     logger = logging.getLogger()
@@ -314,8 +321,11 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model)
     logging.info(model)
 
-    fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
-    fedrandomAPI.train()
+    # fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
+    # fedrandomAPI.train(True)
+
+    # test running time vs training intensity
+    test_running_time_with_training_intensity(dataset, device, args, model_trainer)
 
     # TEST_TRUTHFULNESS = False
     # if TEST_TRUTHFULNESS:

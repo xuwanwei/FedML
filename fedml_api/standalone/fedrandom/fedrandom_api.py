@@ -39,10 +39,11 @@ class FedRandomAPI(object):
         logging.info("type of item in client_list:" + str(type(self.client_list[0])))
         logging.info("############setup_clients (END)#############")
 
-    def train(self):
+    def train(self, show_info):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
+        running_time_list = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -77,21 +78,24 @@ class FedRandomAPI(object):
                 # distribute payment
                 client.receive_payment(payment[idx])
 
+            running_time_list.append(t_max)
             # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
 
-            # test results at last round
-            if round_idx == self.args.comm_round - 1:
-                self._local_test_on_all_clients(round_idx)
-            # per {frequency_of_the_test} round
-            elif round_idx % self.args.frequency_of_the_test == 0:
-                if self.args.dataset.startswith("stackoverflow"):
-                    self._local_test_on_validation_set(round_idx)
-                else:
+            if show_info:
+                # test results at last round
+                if round_idx == self.args.comm_round - 1:
                     self._local_test_on_all_clients(round_idx)
-                wandb.log({"number of winning clients": len(client_indexes)})
-                wandb.log({"running time in every round": t_max})
+                # per {frequency_of_the_test} round
+                elif round_idx % self.args.frequency_of_the_test == 0:
+                    if self.args.dataset.startswith("stackoverflow"):
+                        self._local_test_on_validation_set(round_idx)
+                    else:
+                        self._local_test_on_all_clients(round_idx)
+                    wandb.log({"number of winning clients": len(client_indexes)})
+                    wandb.log({"running time in every round": t_max})
+        return np.mean(running_time_list)
 
     def _client_sampling(self, client_num_in_total, training_intensity):
         client_indexes = []

@@ -300,11 +300,15 @@ def test_truthfulness(fedtiAPI):
                                                         "The utility of a single buyers",
                                                         title="Performance on truthfulness")})
 
-# def test_social_cost_with_training_intensity(fedTiAPI):
-    # for training_intensity in np.arange()
 
-def test_running_time_with_training_intensity(fedTiAPI):
-    for training_intensity in np.arange(500, 2500, 50)
+# def test_social_cost_with_training_intensity(fedTiAPI):
+# for training_intensity in np.arange()
+
+def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
+    for training_intensity in np.arange(200, 2000, 200):
+        args.training_intensity_per_round = training_intensity
+        fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
+        wandb.log({"running time": fedtiAPI.train(False)})
 
 
 if __name__ == "__main__":
@@ -343,8 +347,8 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model)
     logging.info(model)
 
-    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-    fedtiAPI.train()
+    # fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
+    # fedtiAPI.train(True)
 
     # test_truthfulness(fedtiAPI)
-
+    test_running_time_with_training_intensity(dataset, device, args, model_trainer)

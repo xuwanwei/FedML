@@ -43,8 +43,9 @@ class FedTiAPI(object):
         logging.info("type of item in client_list:" + str(type(self.client_list[0])))
         logging.info("############setup_clients (END)#############")
 
-    def train(self):
-        self.train_for_truthfulness(1, 0, -1, True)
+
+    def train(self, show_info):
+        return self.train_for_truthfulness(1, 0, -1, show_info)
 
     # used to test truthfulness
     def train_for_truthfulness(self, truth_ratio, truth_index, truth_round_idx, show_info):
@@ -54,6 +55,7 @@ class FedTiAPI(object):
         payment_plot = []
         final_payment_plot = []
         bidding_price_plot = []
+        running_time_list = []
 
         for round_idx in range(self.args.comm_round):
 
@@ -102,6 +104,8 @@ class FedTiAPI(object):
                 logging.info(
                     'winners bid{}: cost {}, time{}'.format(client_idx, client.get_average_cost(), client.get_time()))
 
+            running_time_list.append(t_max)
+
             # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
@@ -148,6 +152,7 @@ class FedTiAPI(object):
                     #     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
                     #     title="Performance on individual rationality"
                     # )})
+        return np.mean(running_time_list)
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)
