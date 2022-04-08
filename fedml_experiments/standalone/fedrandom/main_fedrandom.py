@@ -279,10 +279,15 @@ def custom_model_trainer(args, model):
 
 
 def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
-    for training_intensity in np.arange(200, 2000, 200):
+    time_list = []
+    for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
-        wandb.log({"running time": fedrandomAPI.train(False)})
+        time_list.append(fedrandomAPI.train(False))
+
+    time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
+    time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
+    wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
 
 
 if __name__ == "__main__":
