@@ -1,12 +1,11 @@
 import copy
 import logging
+import operator
 import random
 
 import numpy as np
 import torch
 import wandb
-
-import operator
 
 from fedml_api.utils.client import Client
 
@@ -43,7 +42,6 @@ class FedTiAPI(object):
         logging.info("type of item in client_list:" + str(type(self.client_list[0])))
         logging.info("############setup_clients (END)#############")
 
-
     def train(self, show_info):
         return self.train_for_truthfulness(1, 0, -1, show_info)
 
@@ -52,9 +50,8 @@ class FedTiAPI(object):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
-        payment_plot = []
-        final_payment_plot = []
-        bidding_price_plot = []
+        payment_list = []
+        bidding_price_list = []
         running_time_list = []
 
         for round_idx in range(self.args.comm_round):
@@ -89,6 +86,7 @@ class FedTiAPI(object):
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
+
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
@@ -133,25 +131,24 @@ class FedTiAPI(object):
                     client_test = self.client_list[client_test_index]
                     submitted_bids_test = client_test.get_cost()
                     # add to plot list
-                    payment_plot.append(payment_test)
-                    final_payment_plot.append(client_test.get_training_intensity() * payment_test)
-                    bidding_price_plot.append(submitted_bids_test)
+                    payment_list.append(payment_test * client.get_training_intensity())
+                    bidding_price_list.append(submitted_bids_test)
 
-                    logging.info(
-                        "test IR, index: " + str(client_test_index) + " payment: " + str(
-                            payment_test) + " cost: " + str(
-                            submitted_bids_test))
+                    # logging.info(
+                    #     "test IR, index: " + str(client_test_index) + " payment: " + str(
+                    #         payment_test) + " cost: " + str(
+                    #         submitted_bids_test))
                     # wandb visualize
                     wandb.log({"number of winning clients": len(client_indexes)})
                     wandb.log({"running time in every round": t_max})
 
                     # plot IR chart
-                    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-                    #     xs=[i for i in range(self.args.comm_round)],
-                    #     ys=[[i for i in payment_plot], [i for i in final_payment_plot], [i for i in bidding_price_plot]],
-                    #     keys=['payment_per_iteration', 'final_payment', 'bidding_price'],
-                    #     title="Performance on individual rationality"
-                    # )})
+                    wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+                        xs=[i for i in range(self.args.comm_round)],
+                        ys=[[i for i in payment_list], [i for i in bidding_price_list]],
+                        keys=['payment_per_iteration', 'bidding_price'],
+                        title="Performance on individual rationality"
+                    )})
         return np.mean(running_time_list)
 
     def _generate_validation_set(self, num_samples=10000):

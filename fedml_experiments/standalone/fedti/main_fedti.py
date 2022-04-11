@@ -304,16 +304,27 @@ def test_truthfulness(fedtiAPI):
 # def test_social_cost_with_training_intensity(fedTiAPI):
 # for training_intensity in np.arange()
 
-def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
+def test_with_training_intensity(dataset, device, args, model_trainer):
+    # running time
     time_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-        time_list.append(fedtiAPI.train(False))
+        running_time= fedtiAPI.train(False)
+        time_list.append(running_time)
 
+    # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
     time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
     wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
+
+    # IR chart
+    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+    #     xs=[i for i in np.arange(200, 3000, 200)],
+    #     ys=[[i for i in payment_list], [i for i in bidding_price_list]],
+    #     keys=['payment', 'bidding_price'],
+    #     title="Performance on individual rationality"
+    # )})
 
 
 if __name__ == "__main__":
@@ -356,4 +367,7 @@ if __name__ == "__main__":
     # fedtiAPI.train(True)
 
     # test_truthfulness(fedtiAPI)
-    test_running_time_with_training_intensity(dataset, device, args, model_trainer)
+
+    # test running time
+    test_with_training_intensity(dataset, device, args, model_trainer)
+    # test IR under different training intensity
