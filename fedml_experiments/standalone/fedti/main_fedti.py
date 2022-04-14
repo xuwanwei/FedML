@@ -279,13 +279,15 @@ def custom_model_trainer(args, model):
         return MyModelTrainerCLS(model)
 
 
-def test_truthfulness(fedtiAPI):
+def test_truthfulness(dataset, device, args, model_trainer):
+    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
     truth_ratio_list = []
     utility_list = []
     logging.info("####################Truthfulness#####################")
     for truth_ratio in np.arange(0.2, 2, 0.2):
         logging.info("Ratio:" + str(truth_ratio))
-        client_utility = fedtiAPI.train_for_truthfulness(truth_ratio, 1, 0, False)
+        _, client_utility = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, truth_index=1, show_info=False,
+                                                            test_truthfulness=True)
         truth_ratio_list.append(truth_ratio)
         utility_list.append(client_utility)
 
@@ -310,21 +312,13 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-        running_time= fedtiAPI.train(False)
+        running_time, _ = fedtiAPI.train(False)
         time_list.append(running_time)
 
     # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
     time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
     wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
-
-    # IR chart
-    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-    #     xs=[i for i in np.arange(200, 3000, 200)],
-    #     ys=[[i for i in payment_list], [i for i in bidding_price_list]],
-    #     keys=['payment', 'bidding_price'],
-    #     title="Performance on individual rationality"
-    # )})
 
 
 if __name__ == "__main__":
@@ -366,8 +360,7 @@ if __name__ == "__main__":
     # fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
     # fedtiAPI.train(True)
 
-    # test_truthfulness(fedtiAPI)
-
     # test running time
-    test_with_training_intensity(dataset, device, args, model_trainer)
-    # test IR under different training intensity
+    # test_with_training_intensity(dataset, device, args, model_trainer)
+    # test truthfulness
+    test_truthfulness(dataset, device, args, model_trainer)

@@ -95,6 +95,7 @@ class FedRandomAPI(object):
                         self._local_test_on_all_clients(round_idx)
                     wandb.log({"number of winning clients": len(client_indexes)})
                     wandb.log({"running time in every round": t_max})
+
         return np.mean(running_time_list)
 
     def _client_sampling(self, client_num_in_total, training_intensity):
