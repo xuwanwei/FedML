@@ -286,10 +286,10 @@ def test_truthfulness(dataset, device, args, model_trainer):
     logging.info("####################Truthfulness#####################")
     for truth_ratio in np.arange(0.2, 2, 0.2):
         logging.info("Ratio:" + str(truth_ratio))
-        _, client_utility = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, truth_index=1, show_info=False,
-                                                            test_truthfulness=True)
+        test_result = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, truth_index=1, show_info=False,
+                                                      test_truthfulness=True)
         truth_ratio_list.append(truth_ratio)
-        utility_list.append(client_utility)
+        utility_list.append(test_result.client_utility)
 
     logging.info("####################End##############################")
     logging.info("utility list:" + str(utility_list))
@@ -309,16 +309,25 @@ def test_truthfulness(dataset, device, args, model_trainer):
 def test_with_training_intensity(dataset, device, args, model_trainer):
     # running time
     time_list = []
+    # social cost
+    social_cost_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-        running_time, _ = fedtiAPI.train(False)
-        time_list.append(running_time)
+        test_result = fedtiAPI.train(False)
+        time_list.append(test_result.running_time)
+        social_cost_list.append(test_result.social_cost)
 
     # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
     time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
     wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
+
+    # social cost chart
+    social_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), social_cost_list)]
+    social_cost_table = wandb.Table(data=social_cost_data, columns=["Training intensity", "Social cost"])
+    wandb.log(
+        {"Social cost": wandb.plot.line(social_cost_table, "Training intensity", "Social cost", title="Social cost")})
 
 
 if __name__ == "__main__":
@@ -357,10 +366,11 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model)
     logging.info(model)
 
+    # test one time
     # fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
     # fedtiAPI.train(True)
 
-    # test running time
-    # test_with_training_intensity(dataset, device, args, model_trainer)
+    # test running time, social cost vs training intensity
+    test_with_training_intensity(dataset, device, args, model_trainer)
     # test truthfulness
-    test_truthfulness(dataset, device, args, model_trainer)
+    # test_truthfulness(dataset, device, args, model_trainer)

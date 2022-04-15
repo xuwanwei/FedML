@@ -8,6 +8,7 @@ import torch
 import wandb
 
 from fedml_api.utils.client import Client
+from fedml_api.utils.testInfo import TestInfo
 
 
 class FedTiAPI(object):
@@ -54,6 +55,7 @@ class FedTiAPI(object):
         bidding_price_list = []
         running_time_list = []
         client_utility_list = []
+        social_cost_list = []
 
         for round_idx in range(self.args.comm_round):
 
@@ -74,19 +76,20 @@ class FedTiAPI(object):
 
             # choose one bid in one particular round to test truthfulness
             if test_truthfulness:
-                self.client_list[truth_index].update_bid(training_intensity=100, cost=2, truth_ratio=truth_ratio,
-                                                         computation_coefficient=0.02, communication_time=10)
+                self.client_list[truth_index].update_bid(training_intensity=90, cost=2, truth_ratio=truth_ratio,
+                                                         computation_coefficient=0.025, communication_time=10)
 
             # WDP and Payment
             # version 1
             # client_indexes, payment = self._winners_determination()
             # version 2
-            client_indexes, payment = self._winners_determination_2()
+            # client_indexes, payment = self._winners_determination_2()
             # version 3
-            # client_indexes, payment = self._winners_determination_3()
+            client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
+            cost_tot = 0
 
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
@@ -98,19 +101,18 @@ class FedTiAPI(object):
                 w = client.train(copy.deepcopy(w_global))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
+                cost_tot += client.get_cost()
                 # distribute payment
                 client.receive_payment(payment[idx])
-                # logging.info(
-                #     'winners bid{}: cost {}, time{}'.format(client_idx, client.get_average_cost(), client.get_time()))
 
             # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
 
             running_time_list.append(t_max)
+            social_cost_list.append(t_max + cost_tot)
             # get utility for truthfulness test
             if test_truthfulness:
-                # logging.info("average cost of truth bid:" + str(self.client_list[truth_index].get_average_cost()))
                 client_utility_list.append(self.client_list[truth_index].get_utility())
 
             # test results at last round
@@ -144,7 +146,7 @@ class FedTiAPI(object):
                     #     keys=['final_payment', 'bidding_price'],
                     #     title="Performance on individual rationality"
                     # )})
-        return np.mean(running_time_list), np.mean(client_utility_list)
+        return TestInfo(np.mean(running_time_list), np.mean(client_utility_list), np.mean(social_cost_list))
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)

@@ -7,6 +7,7 @@ import torch
 import wandb
 
 from fedml_api.utils.client import Client
+from fedml_api.utils.testInfo import TestInfo
 
 
 class FedRandomAPI(object):
