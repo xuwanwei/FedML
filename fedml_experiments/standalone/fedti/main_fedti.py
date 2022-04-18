@@ -311,12 +311,15 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     time_list = []
     # social cost
     social_cost_list = []
+    # server utility
+    server_cost_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
         test_result = fedtiAPI.train(False)
         time_list.append(test_result.running_time)
         social_cost_list.append(test_result.social_cost)
+        server_cost_list.append(test_result.server_cost)
 
     # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
@@ -328,6 +331,12 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     social_cost_table = wandb.Table(data=social_cost_data, columns=["Training intensity", "Social cost"])
     wandb.log(
         {"Social cost": wandb.plot.line(social_cost_table, "Training intensity", "Social cost", title="Social cost")})
+
+    # server utility chart
+    server_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), server_cost_list)]
+    server_cost_table = wandb.Table(data=server_cost_data, columns=["Training intensity", "Server cost"])
+    wandb.log(
+        {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost", title="Average utility of server")})
 
 
 if __name__ == "__main__":

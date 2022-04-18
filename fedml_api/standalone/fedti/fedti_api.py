@@ -40,7 +40,6 @@ class FedTiAPI(object):
                        train_data_local_num_dict[client_idx], self.args, self.device, model_trainer, 0, 0, 0, 0)
             self.client_list.append(c)
         logging.info("number of clients in client_list:" + str(len(self.client_list)))
-        logging.info("type of item in client_list:" + str(type(self.client_list[0])))
         logging.info("############setup_clients (END)#############")
 
     def train(self, show_info):
@@ -56,6 +55,7 @@ class FedTiAPI(object):
         running_time_list = []
         client_utility_list = []
         social_cost_list = []
+        server_cost_list = []
 
         for round_idx in range(self.args.comm_round):
 
@@ -81,15 +81,16 @@ class FedTiAPI(object):
 
             # WDP and Payment
             # version 1
-            # client_indexes, payment = self._winners_determination()
+            client_indexes, payment = self._winners_determination()
             # version 2
             # client_indexes, payment = self._winners_determination_2()
             # version 3
-            client_indexes, payment = self._winners_determination_3()
+            # client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
-            cost_tot = 0
+            client_cost_tot = 0
+            client_payment_tot = 0
 
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
@@ -101,7 +102,8 @@ class FedTiAPI(object):
                 w = client.train(copy.deepcopy(w_global))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
-                cost_tot += client.get_cost()
+                client_cost_tot += client.get_cost()
+                client_payment_tot += payment[idx] * client.get_training_intensity()
                 # distribute payment
                 client.receive_payment(payment[idx])
 
@@ -110,7 +112,9 @@ class FedTiAPI(object):
             self.model_trainer.set_model_params(w_global)
 
             running_time_list.append(t_max)
-            social_cost_list.append(t_max + cost_tot)
+            social_cost_list.append(t_max + client_cost_tot)
+            server_cost_list.append(t_max + client_payment_tot)
+
             # get utility for truthfulness test
             if test_truthfulness:
                 client_utility_list.append(self.client_list[truth_index].get_utility())
@@ -146,7 +150,8 @@ class FedTiAPI(object):
                     #     keys=['final_payment', 'bidding_price'],
                     #     title="Performance on individual rationality"
                     # )})
-        return TestInfo(np.mean(running_time_list), np.mean(client_utility_list), np.mean(social_cost_list))
+        return TestInfo(np.mean(running_time_list), np.mean(client_utility_list), np.mean(social_cost_list),
+                        np.mean(server_cost_list))
 
     def _generate_validation_set(self, num_samples=10000):
         test_data_num = len(self.test_global.dataset)
