@@ -30,10 +30,9 @@ from fedml_api.data_preprocessing.MNIST.data_loader import load_partition_data_m
 from fedml_api.model.linear.lr import LogisticRegression
 from fedml_api.model.cv.resnet_gn import resnet18
 
-from fedml_api.standalone.fedti.my_model_trainer_classification import MyModelTrainer as MyModelTrainerCLS
-from fedml_api.standalone.fedti.my_model_trainer_nwp import MyModelTrainer as MyModelTrainerNWP
-from fedml_api.standalone.fedti.my_model_trainer_tag_prediction import MyModelTrainer as MyModelTrainerTAG
-from fedml_api.standalone.fedti.fedti_api import FedTiAPI
+from fedml_api.standalone.fedrandom.my_model_trainer_classification import MyModelTrainer as MyModelTrainerCLS
+from fedml_api.standalone.fedrandom.my_model_trainer_nwp import MyModelTrainer as MyModelTrainerNWP
+from fedml_api.standalone.fedrandom.my_model_trainer_tag_prediction import MyModelTrainer as MyModelTrainerTAG
 from fedml_api.standalone.fedrandom.fedrandom_api import FedRandomAPI
 
 
@@ -279,64 +278,16 @@ def custom_model_trainer(args, model):
         return MyModelTrainerCLS(model)
 
 
-def test_truthfulness(dataset, device, args, model_trainer):
-    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-    truth_ratio_list = []
-    utility_list = []
-    logging.info("####################Truthfulness#####################")
-    for truth_ratio in np.arange(0.2, 2, 0.2):
-        logging.info("Ratio:" + str(truth_ratio))
-        test_result = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, truth_index=1, show_info=False,
-                                                      test_truthfulness=True)
-        truth_ratio_list.append(truth_ratio)
-        utility_list.append(test_result.client_utility)
-
-    logging.info("####################End##############################")
-    logging.info("utility list:" + str(utility_list))
-    truth_data = [[x, y] for (x, y) in zip(truth_ratio_list, utility_list)]
-    truth_table = wandb.Table(data=truth_data, columns=["The ratio of the submitted bid to the truthful cost",
-                                                        "The utility of a single buyers"])
-    wandb.log(
-        {"Performance on truthfulness": wandb.plot.line(truth_table,
-                                                        "The ratio of the submitted bid to the truthful cost",
-                                                        "The utility of a single buyers",
-                                                        title="Performance on truthfulness")})
-
-
-# def test_social_cost_with_training_intensity(fedTiAPI):
-# for training_intensity in np.arange()
-
-def test_with_training_intensity(dataset, device, args, model_trainer):
-    # running time
+def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
     time_list = []
-    # social cost
-    social_cost_list = []
-    # server utility
-    server_cost_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
-        fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-        test_result = fedtiAPI.train(False)
-        time_list.append(test_result.running_time)
-        social_cost_list.append(test_result.social_cost)
-        server_cost_list.append(test_result.server_cost)
+        fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
+        time_list.append(fedrandomAPI.train(False))
 
-    # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
     time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
     wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
-
-    # social cost chart
-    social_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), social_cost_list)]
-    social_cost_table = wandb.Table(data=social_cost_data, columns=["Training intensity", "Social cost"])
-    wandb.log(
-        {"Social cost": wandb.plot.line(social_cost_table, "Training intensity", "Social cost", title="Social cost")})
-
-    # server utility chart
-    server_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), server_cost_list)]
-    server_cost_table = wandb.Table(data=server_cost_data, columns=["Training intensity", "Server cost"])
-    wandb.log(
-        {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost", title="Average utility of server")})
 
 
 if __name__ == "__main__":
@@ -375,11 +326,9 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model)
     logging.info(model)
 
-    # test one time
-    # fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-    # fedtiAPI.train(True)
+    # fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
+    # fedrandomAPI.train(True)
 
-    # test running time, social cost vs training intensity
-    test_with_training_intensity(dataset, device, args, model_trainer)
-    # test truthfulness
-    # test_truthfulness(dataset, device, args, model_trainer)
+    # test running time vs training intensity
+    test_running_time_with_training_intensity(dataset, device, args, model_trainer)
+

@@ -1,5 +1,4 @@
-import logging
-from fedml_api.standalone.fedti.bid import Bid
+from fedml_api.utils.bid import Bid
 
 
 class Client:
@@ -71,3 +70,6 @@ class Client:
 
     def update_truthfulness(self, truth_ratio):
         self.bid.update_bid_with_ratio(truth_ratio)
+
+    def get_bidding_price(self):
+        return self.bid.bidding_price
