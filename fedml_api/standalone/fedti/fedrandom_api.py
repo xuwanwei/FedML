@@ -68,7 +68,7 @@ class FedTiAPI(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(5, 10),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(2, 5),
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
@@ -81,9 +81,9 @@ class FedTiAPI(object):
             # version 1
             # client_indexes, payment = self._winners_determination()
             # version 2
-            # client_indexes, payment = self._winners_determination_2()
+            client_indexes, payment = self._winners_determination_2()
             # version 3
-            client_indexes, payment = self._winners_determination_3()
+            # client_indexes, payment = self._winners_determination_3()
 
             logging.info("winners_client_indexes = " + str(client_indexes))
 
