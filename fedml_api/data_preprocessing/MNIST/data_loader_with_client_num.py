@@ -32,6 +32,7 @@ def read_data(train_data_dir, test_data_dir):
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
         clients.extend(cdata['users'])
+        logging.info(cdata['users'])
         if 'hierarchies' in cdata:
             groups.extend(cdata['hierarchies'])
         train_data.update(cdata['user_data'])
@@ -83,12 +84,8 @@ def load_partition_data_mnist_by_device_id(batch_size,
     test_path += '/' + device_id + '/' + 'test'
     return load_partition_data_mnist(batch_size, train_path, test_path)
 
-# def partition_with_client_num(client_num):
-#     for client_idx in range(client_num):
-#
 
-
-def load_partition_data_mnist(batch_size,
+def load_partition_data_mnist(batch_size, client_num,
                               train_path="./../../../data/MNIST/train",
                               test_path="./../../../data/MNIST/test"):
     users, groups, train_data, test_data = read_data(train_path, test_path)
@@ -104,8 +101,14 @@ def load_partition_data_mnist(batch_size,
     test_data_global = list()
     client_idx = 0
     logging.info("loading data...")
-    logging.info("user type:"+str(type(users)))
-    logging.info("groups type:"+str(type(groups)))
+
+    data_id_partition = np.array_split(np.arange(1000), client_num)
+
+    for client_idx in range(client_num):
+        user_train_data = {}
+        for user_id in data_id_partition[client_idx]:
+            user_train_data.update()
+
     for u, g in zip(users, groups):
         user_train_data_num = len(train_data[u]['x'])
         user_test_data_num = len(test_data[u]['x'])
@@ -114,6 +117,7 @@ def load_partition_data_mnist(batch_size,
         train_data_local_num_dict[client_idx] = user_train_data_num
 
         # transform to batches
+        logging.info("type of train_data[u]"+str(type(train_data[u])))
         train_batch = batch_data(train_data[u], batch_size)
         test_batch = batch_data(test_data[u], batch_size)
 
