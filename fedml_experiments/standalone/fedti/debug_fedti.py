@@ -110,6 +110,7 @@ def load_data(args, dataset_name):
 
     if dataset_name == "mnist":
         logging.info("load_data. dataset_name = %s" % dataset_name)
+        logging.info("client_num_in_load_data = %d" % args.client_num_in_total)
         client_num, train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
         class_num = load_partition_data_mnist(args.batch_size, args.client_num_in_total)
@@ -366,5 +367,15 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(0)
     torch.backends.cudnn.deterministic = True
 
+    logging.info("before dataset:"+str(args.client_num_in_total))
     # debug load data
     dataset = load_data(args, args.dataset)
+    logging.info("after dataset:"+str(args.client_num_in_total))
+
+    model = create_model(args, model_name=args.model, output_dim=dataset[7])
+    model_trainer = custom_model_trainer(args, model)
+    logging.info(model)
+    logging.info(args)
+
+    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
+    fedtiAPI.train(True)

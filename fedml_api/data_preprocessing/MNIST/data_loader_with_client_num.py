@@ -32,7 +32,6 @@ def read_data(train_data_dir, test_data_dir):
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
         clients.extend(cdata['users'])
-        logging.info(cdata['users'])
         if 'hierarchies' in cdata:
             groups.extend(cdata['hierarchies'])
         train_data.update(cdata['user_data'])
@@ -102,24 +101,31 @@ def load_partition_data_mnist(batch_size, client_num,
     client_idx = 0
     logging.info("loading data...")
 
-    data_id_partition = np.array_split(np.arange(1000), client_num)
+    data_id_partition = np.array_split(users, client_num)
 
-    for client_idx in range(client_num):
-        user_train_data = {}
-        for user_id in data_id_partition[client_idx]:
-            user_train_data.update()
+    client_train_data = {}
+    client_test_data = {}
+    for idx in range(client_num):
+        user_train_data = {'y': [], 'x': []}
+        user_test_data = {'y': [], 'x': []}
+        for user_id in data_id_partition[idx]:
+            user_train_data['x'].extend(train_data[user_id]['x'])
+            user_train_data['y'].extend(train_data[user_id]['y'])
+            user_test_data['x'].extend(test_data[user_id]['x'])
+            user_test_data['y'].extend(test_data[user_id]['y'])
+        client_train_data[idx] = user_train_data
+        client_test_data[idx] = user_test_data
 
-    for u, g in zip(users, groups):
-        user_train_data_num = len(train_data[u]['x'])
-        user_test_data_num = len(test_data[u]['x'])
+    for u in range(client_num):
+        user_train_data_num = len(client_train_data[u]['x'])
+        user_test_data_num = len(client_test_data[u]['x'])
         train_data_num += user_train_data_num
         test_data_num += user_test_data_num
         train_data_local_num_dict[client_idx] = user_train_data_num
 
         # transform to batches
-        logging.info("type of train_data[u]"+str(type(train_data[u])))
-        train_batch = batch_data(train_data[u], batch_size)
-        test_batch = batch_data(test_data[u], batch_size)
+        train_batch = batch_data(client_train_data[u], batch_size)
+        test_batch = batch_data(client_test_data[u], batch_size)
 
         # index using client index
         train_data_local_dict[client_idx] = train_batch

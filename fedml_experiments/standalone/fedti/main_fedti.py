@@ -26,7 +26,6 @@ from fedml_api.model.cv.cnn import CNN_DropOut
 from fedml_api.data_preprocessing.FederatedEMNIST.data_loader import load_partition_data_federated_emnist
 from fedml_api.model.nlp.rnn import RNN_OriginalFedAvg, RNN_StackOverFlow
 
-# from fedml_api.data_preprocessing.MNIST.data_loader import load_partition_data_mnist
 from fedml_api.data_preprocessing.MNIST.data_loader_with_client_num import load_partition_data_mnist
 from fedml_api.model.linear.lr import LogisticRegression
 from fedml_api.model.cv.resnet_gn import resnet18
@@ -112,7 +111,7 @@ def load_data(args, dataset_name):
         logging.info("load_data. dataset_name = %s" % dataset_name)
         client_num, train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num = load_partition_data_mnist(args.batch_size)
+        class_num = load_partition_data_mnist(args.batch_size, args.client_num_in_total)
         """
         For shallow NN or linear models, 
         we uniformly sample a fraction of clients each round (as the original FedAvg paper)
@@ -381,6 +380,6 @@ if __name__ == "__main__":
     fedtiAPI.train(True)
 
     # test running time, social cost vs training intensity
-    test_with_training_intensity(dataset, device, args, model_trainer)
+    # test_with_training_intensity(dataset, device, args, model_trainer)
     # test truthfulness
-    # test_truthfulness(dataset, device, args, model_trainer)
+    test_truthfulness(dataset, device, args, model_trainer)
