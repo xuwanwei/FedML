@@ -286,8 +286,8 @@ def test_truthfulness(dataset, device, args, model_trainer):
     logging.info("####################Truthfulness#####################")
     for truth_ratio in np.arange(0.2, 2, 0.2):
         logging.info("Ratio:" + str(truth_ratio))
-        test_result = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, truth_index=1, show_info=False,
-                                                      test_truthfulness=True)
+        test_result = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, is_show_info=False,
+                                                      is_test_truthfulness=True)
         truth_ratio_list.append(truth_ratio)
         utility_list.append(test_result.client_utility)
 
@@ -336,7 +336,8 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     server_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), server_cost_list)]
     server_cost_table = wandb.Table(data=server_cost_data, columns=["Training intensity", "Server cost"])
     wandb.log(
-        {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost", title="Average utility of server")})
+        {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost",
+                                                   title="Average utility of server")})
 
 
 if __name__ == "__main__":
@@ -382,4 +383,4 @@ if __name__ == "__main__":
     # test running time, social cost vs training intensity
     # test_with_training_intensity(dataset, device, args, model_trainer)
     # test truthfulness
-    test_truthfulness(dataset, device, args, model_trainer)
+    # test_truthfulness(dataset, device, args, model_trainer)

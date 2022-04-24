@@ -42,11 +42,11 @@ class FedTiAPI(object):
         logging.info("number of clients in client_list:" + str(len(self.client_list)))
         logging.info("############setup_clients (END)#############")
 
-    def train(self, show_info):
-        return self.train_for_truthfulness(truth_ratio=1, truth_index=0, show_info=show_info, test_truthfulness=False)
+    def train(self, is_show_info):
+        return self.train_for_truthfulness(truth_ratio=1, is_show_info=is_show_info, is_test_truthfulness=False)
 
     # used to test truthfulness
-    def train_for_truthfulness(self, truth_ratio, truth_index, show_info, test_truthfulness):
+    def train_for_truthfulness(self, truth_ratio, is_show_info, is_test_truthfulness):
         w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
@@ -56,6 +56,7 @@ class FedTiAPI(object):
         client_utility_list = []
         social_cost_list = []
         server_cost_list = []
+        truth_index = 0
 
         for round_idx in range(self.args.comm_round):
 
@@ -70,22 +71,26 @@ class FedTiAPI(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(2, 5),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.random() * 3.0 + 2.0,
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
             # choose one bid in one particular round to test truthfulness
-            if test_truthfulness:
-                self.client_list[truth_index].update_bid(training_intensity=80, cost=2, truth_ratio=truth_ratio,
-                                                         computation_coefficient=0.025, communication_time=11)
+            if is_test_truthfulness:
+                # self.client_list[truth_index].update_bid(training_intensity=80, cost=2, truth_ratio=truth_ratio,
+                #                                          computation_coefficient=0.035, communication_time=13)
+                np.random.seed(4)
+                truth_index = np.random.randint(0, len(self.client_list))
+                self.client_list[truth_index].update_bidding_price_with_ratio(truth_ratio)
+                logging.info("")
 
             # WDP and Payment
             # version 1
             # client_indexes, payment = self._winners_determination()
             # version 2
-            client_indexes, payment = self._winners_determination_2()
+            # client_indexes, payment = self._winners_determination_2()
             # version 3
-            # client_indexes, payment = self._winners_determination_3()
+            client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -95,11 +100,11 @@ class FedTiAPI(object):
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
-                if not test_truthfulness:
+                if not is_test_truthfulness:
                     client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
-                                            self.test_data_local_dict[client_idx],
-                                            self.train_data_local_num_dict[client_idx])
-                # train on new dataset
+                                                self.test_data_local_dict[client_idx],
+                                                self.train_data_local_num_dict[client_idx])
+                    # train on new dataset
                     w = client.train(copy.deepcopy(w_global))
                     w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
 
@@ -110,7 +115,7 @@ class FedTiAPI(object):
                 client.receive_payment(payment[idx])
 
             # update global weights
-            if not test_truthfulness:
+            if not is_test_truthfulness:
                 w_global = self._aggregate(w_locals)
                 self.model_trainer.set_model_params(w_global)
 
@@ -119,11 +124,11 @@ class FedTiAPI(object):
             server_cost_list.append(t_max + client_payment_tot)
 
             # get utility for truthfulness test
-            if test_truthfulness:
+            if is_test_truthfulness:
                 client_utility_list.append(self.client_list[truth_index].get_utility())
 
             # test results at last round
-            if show_info:
+            if is_show_info:
                 if round_idx == self.args.comm_round - 1:
                     self._local_test_on_all_clients(round_idx)
                 # per {frequency_of_the_test} round
@@ -147,12 +152,12 @@ class FedTiAPI(object):
                     wandb.log({"running time in every round": t_max})
 
                     # plot IR chart
-                    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-                    #     xs=[i for i in range(self.args.comm_round)],
-                    #     ys=[[i for i in payment_list], [i for i in bidding_price_list]],
-                    #     keys=['final_payment', 'bidding_price  '],
-                    #     title="Performance on individual rationality"
-                    # )})
+                    wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+                        xs=[i for i in range(self.args.comm_round)],
+                        ys=[[i for i in payment_list], [i for i in bidding_price_list]],
+                        keys=['final_payment', 'bidding_price  '],
+                        title="Performance on individual rationality"
+                    )})
         return TestInfo(np.mean(running_time_list), np.mean(client_utility_list), np.mean(social_cost_list),
                         np.mean(server_cost_list))
 
@@ -431,9 +436,9 @@ class FedTiAPI(object):
     def _get_payment_3(self, opt_index, second_index, t_max):
         client_second_winner = self.client_list[second_index]
         client_winner = self.client_list[opt_index]
-        # version 2
-        # r_t = max(0, client_winner.get_time() - t_max)
         # version 3
         r_t = max(client_winner.get_time(), t_max)
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
+        logging.info("second avg cost:{}, t_max:{}, winner training intensity:{}".format(
+            client_second_winner.get_average_cost(), r_t, client_winner.get_training_intensity()))
         return payment
