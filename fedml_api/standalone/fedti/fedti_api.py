@@ -100,13 +100,13 @@ class FedTiAPI(object):
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
-                if not is_test_truthfulness:
-                    client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
-                                                self.test_data_local_dict[client_idx],
-                                                self.train_data_local_num_dict[client_idx])
-                    # train on new dataset
-                    w = client.train(copy.deepcopy(w_global))
-                    w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+
+                client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
+                                            self.test_data_local_dict[client_idx],
+                                            self.train_data_local_num_dict[client_idx])
+                # train on new dataset
+                w = client.train(copy.deepcopy(w_global))
+                w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
 
                 t_max = max(t_max, client.get_time())
                 client_cost_tot += client.get_cost()
@@ -115,9 +115,8 @@ class FedTiAPI(object):
                 client.receive_payment(payment[idx])
 
             # update global weights
-            if not is_test_truthfulness:
-                w_global = self._aggregate(w_locals)
-                self.model_trainer.set_model_params(w_global)
+            w_global = self._aggregate(w_locals)
+            self.model_trainer.set_model_params(w_global)
 
             running_time_list.append(t_max)
             social_cost_list.append(t_max + client_cost_tot)
@@ -126,6 +125,10 @@ class FedTiAPI(object):
             # get utility for truthfulness test
             if is_test_truthfulness:
                 client_utility_list.append(self.client_list[truth_index].get_utility())
+            else:
+                client_test_id = np.random.randint(0, len(client_indexes))
+                client_test_index = client_indexes[client_test_id]
+                client_utility_list.append(self.client_list[client_test_index].get_utility())
 
             # test results at last round
             if is_show_info:
