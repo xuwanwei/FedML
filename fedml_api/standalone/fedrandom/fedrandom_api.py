@@ -45,6 +45,8 @@ class FedRandomAPI(object):
         np.random.seed(self.args.comm_round)
 
         running_time_list = []
+        social_cost_list = []
+        server_cost_list = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -57,7 +59,7 @@ class FedRandomAPI(object):
             """
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.randint(2, 5),
+                client.update_bid(training_intensity=np.random.randint(50, 100), cost=np.random.random() * 3.0 + 2.0,
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
                                   communication_time=np.random.randint(10, 15))
 
@@ -67,22 +69,28 @@ class FedRandomAPI(object):
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
+            client_cost_tot = 0
+            client_payment_tot = 0
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
                 client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
                                             self.test_data_local_dict[client_idx],
                                             self.train_data_local_num_dict[client_idx])
                 # train on new dataset
-                w = client.train(copy.deepcopy(w_global))
-                w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+                # w = client.train(copy.deepcopy(w_global))
+                # w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
+                client_cost_tot += client.get_cost()
+                client_payment_tot += payment[idx] * client.get_training_intensity()
                 # distribute payment
                 client.receive_payment(payment[idx])
 
             running_time_list.append(t_max)
+            social_cost_list.append(t_max + client_cost_tot)
+            server_cost_list.append(t_max + client_payment_tot)
             # update global weights
-            w_global = self._aggregate(w_locals)
-            self.model_trainer.set_model_params(w_global)
+            # w_global = self._aggregate(w_locals)
+            # self.model_trainer.set_model_params(w_global)
 
             if show_info:
                 # test results at last round
@@ -97,7 +105,7 @@ class FedRandomAPI(object):
                     wandb.log({"number of winning clients": len(client_indexes)})
                     wandb.log({"running time in every round": t_max})
 
-        return np.mean(running_time_list)
+        return np.mean(running_time_list), np.mean(social_cost_list), np.mean(server_cost_list)
 
     def _client_sampling(self, client_num_in_total, training_intensity):
         client_indexes = []

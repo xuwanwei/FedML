@@ -280,14 +280,33 @@ def custom_model_trainer(args, model):
 
 def test_running_time_with_training_intensity(dataset, device, args, model_trainer):
     time_list = []
+    social_cost_list = []
+    server_cost_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
-        time_list.append(fedrandomAPI.train(False))
+        training_time, social_cost, server_cost = fedrandomAPI.train(False)
+        time_list.append(training_time)
+        social_cost_list.append(social_cost)
+        server_cost_list.append(server_cost)
 
+    # training time table
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
-    time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
-    wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
+    time_table = wandb.Table(data=time_data, columns=["Training intensity", "Training time"])
+    wandb.log({"Training time": wandb.plot.line(time_table, "Training intensity", "Training time", title="Running time")})
+
+    # social cost chart
+    social_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), social_cost_list)]
+    social_cost_table = wandb.Table(data=social_cost_data, columns=["Training intensity", "Social cost"])
+    wandb.log(
+        {"Social cost": wandb.plot.line(social_cost_table, "Training intensity", "Social cost", title="Social cost")})
+
+    # server utility chart
+    server_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), server_cost_list)]
+    server_cost_table = wandb.Table(data=server_cost_data, columns=["Training intensity", "Server cost"])
+    wandb.log(
+        {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost",
+                                                   title="Average utility of server")})
 
 
 if __name__ == "__main__":

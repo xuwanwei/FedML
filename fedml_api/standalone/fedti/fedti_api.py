@@ -88,9 +88,9 @@ class FedTiAPI(object):
             # version 1
             # client_indexes, payment = self._winners_determination()
             # version 2
-            # client_indexes, payment = self._winners_determination_2()
+            client_indexes, payment = self._winners_determination_2()
             # version 3
-            client_indexes, payment = self._winners_determination_3()
+            # client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0

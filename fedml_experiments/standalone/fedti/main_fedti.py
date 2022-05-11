@@ -323,8 +323,8 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
 
     # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
-    time_table = wandb.Table(data=time_data, columns=["Training intensity", "Running time"])
-    wandb.log({"Running time": wandb.plot.line(time_table, "Training intensity", "Running time", title="Running time")})
+    time_table = wandb.Table(data=time_data, columns=["Training intensity", "Training time"])
+    wandb.log({"Training time": wandb.plot.line(time_table, "Training intensity", "Training time", title="Training time")})
 
     # social cost chart
     social_cost_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), social_cost_list)]
