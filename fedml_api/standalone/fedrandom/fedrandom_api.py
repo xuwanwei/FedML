@@ -123,7 +123,8 @@ class FedRandomAPI(object):
             if client_indexes.count(idx):
                 continue
             client_indexes.append(idx)
-            client_payment.append(self.client_list[idx].get_bidding_price())
+            client_payment.append(
+                self.client_list[idx].get_bidding_price() / self.client_list[idx].get_training_intensity())
             training_intensity_tot += self.client_list[idx].get_training_intensity()
         return client_indexes, client_payment
 
