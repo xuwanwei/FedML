@@ -303,9 +303,6 @@ def test_truthfulness(dataset, device, args, model_trainer):
                                                         title="Performance on truthfulness")})
 
 
-# def test_social_cost_with_training_intensity(fedTiAPI):
-# for training_intensity in np.arange()
-
 def test_with_training_intensity(dataset, device, args, model_trainer):
     # running time
     time_list = []
@@ -313,6 +310,8 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     social_cost_list = []
     # server utility
     server_cost_list = []
+    # client utility
+    client_utility_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
@@ -320,6 +319,7 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
         time_list.append(test_result.running_time)
         social_cost_list.append(test_result.social_cost)
         server_cost_list.append(test_result.server_cost)
+        client_utility_list.append(test_result.client_utility)
 
     # running time chart
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
@@ -338,6 +338,13 @@ def test_with_training_intensity(dataset, device, args, model_trainer):
     wandb.log(
         {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost",
                                                    title="Average utility of server")})
+
+    # average user utility
+    client_utility_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), client_utility_list)]
+    client_utility_table = wandb.Table(data=client_utility_data, columns=["Training intensity", "Client utility"])
+    wandb.log(
+        {"Average cost of clients": wandb.plot.line(client_utility_table, "Training intensity", "Client utility",
+                                                    title="Average utility of clients")})
 
 
 if __name__ == "__main__":
@@ -377,10 +384,10 @@ if __name__ == "__main__":
     logging.info(model)
 
     # test one time
-    fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
-    fedtiAPI.train(True)
+    # fedtiAPI = FedTiAPI(dataset, device, args, model_trainer)
+    # fedtiAPI.train(True)
 
     # test running time, social cost vs training intensity
-    # test_with_training_intensity(dataset, device, args, model_trainer)
+    test_with_training_intensity(dataset, device, args, model_trainer)
     # test truthfulness
     # test_truthfulness(dataset, device, args, model_trainer)
