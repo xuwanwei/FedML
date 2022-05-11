@@ -47,6 +47,7 @@ class FedRandomAPI(object):
         running_time_list = []
         social_cost_list = []
         server_cost_list = []
+        client_utility_list = []
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
@@ -88,6 +89,11 @@ class FedRandomAPI(object):
             running_time_list.append(t_max)
             social_cost_list.append(t_max + client_cost_tot)
             server_cost_list.append(t_max + client_payment_tot)
+            # client utility
+            client_test_id = np.random.randint(0, len(client_indexes))
+            client_test_index = client_indexes[client_test_id]
+            client_utility_list.append(self.client_list[client_test_index].get_utility())
+
             # update global weights
             # w_global = self._aggregate(w_locals)
             # self.model_trainer.set_model_params(w_global)
@@ -105,7 +111,8 @@ class FedRandomAPI(object):
                     wandb.log({"number of winning clients": len(client_indexes)})
                     wandb.log({"running time in every round": t_max})
 
-        return np.mean(running_time_list), np.mean(social_cost_list), np.mean(server_cost_list)
+        return np.mean(running_time_list), np.mean(social_cost_list), np.mean(server_cost_list), np.mean(
+            client_utility_list)
 
     def _client_sampling(self, client_num_in_total, training_intensity):
         client_indexes = []

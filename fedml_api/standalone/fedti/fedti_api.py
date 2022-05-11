@@ -82,7 +82,6 @@ class FedTiAPI(object):
                 np.random.seed(4)
                 truth_index = np.random.randint(0, len(self.client_list))
                 self.client_list[truth_index].update_bidding_price_with_ratio(truth_ratio)
-                logging.info("")
 
             # WDP and Payment
             # version 1
@@ -105,8 +104,8 @@ class FedTiAPI(object):
                                             self.test_data_local_dict[client_idx],
                                             self.train_data_local_num_dict[client_idx])
                 # train on new dataset
-                w = client.train(copy.deepcopy(w_global))
-                w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+                # w = client.train(copy.deepcopy(w_global))
+                # w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
 
                 t_max = max(t_max, client.get_time())
                 client_cost_tot += client.get_cost()
@@ -115,8 +114,8 @@ class FedTiAPI(object):
                 client.receive_payment(payment[idx])
 
             # update global weights
-            w_global = self._aggregate(w_locals)
-            self.model_trainer.set_model_params(w_global)
+            # w_global = self._aggregate(w_locals)
+            # self.model_trainer.set_model_params(w_global)
 
             running_time_list.append(t_max)
             social_cost_list.append(t_max + client_cost_tot)
@@ -155,12 +154,12 @@ class FedTiAPI(object):
                     wandb.log({"running time in every round": t_max})
 
                     # plot IR chart
-                    wandb.log({"Performance on individual rationality": wandb.plot.line_series(
-                        xs=[i for i in range(self.args.comm_round)],
-                        ys=[[i for i in payment_list], [i for i in bidding_price_list]],
-                        keys=['final_payment', 'bidding_price  '],
-                        title="Performance on individual rationality"
-                    )})
+                    # wandb.log({"Performance on individual rationality": wandb.plot.line_series(
+                    #     xs=[i for i in range(self.args.comm_round)],
+                    #     ys=[[i for i in payment_list], [i for i in bidding_price_list]],
+                    #     keys=['final_payment', 'bidding_price  '],
+                    #     title="Performance on individual rationality"
+                    # )})
         return TestInfo(np.mean(running_time_list), np.mean(client_utility_list), np.mean(social_cost_list),
                         np.mean(server_cost_list))
 
@@ -330,6 +329,7 @@ class FedTiAPI(object):
 
         t_max = 0
 
+        logging.info("training_intensity" + str(self.args.training_intensity_per_round))
         while training_intensity_tot < self.args.training_intensity_per_round:
             if len(candidates) <= 1:
                 logging.info("Not enough client to fulfill training intensity guarantee")

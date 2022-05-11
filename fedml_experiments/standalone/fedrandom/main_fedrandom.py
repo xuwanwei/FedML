@@ -282,13 +282,15 @@ def test_running_time_with_training_intensity(dataset, device, args, model_train
     time_list = []
     social_cost_list = []
     server_cost_list = []
+    client_utility_list = []
     for training_intensity in np.arange(200, 3000, 200):
         args.training_intensity_per_round = training_intensity
         fedrandomAPI = FedRandomAPI(dataset, device, args, model_trainer)
-        training_time, social_cost, server_cost = fedrandomAPI.train(False)
+        training_time, social_cost, server_cost, client_utility = fedrandomAPI.train(False)
         time_list.append(training_time)
         social_cost_list.append(social_cost)
         server_cost_list.append(server_cost)
+        client_utility_list.append(client_utility)
 
     # training time table
     time_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), time_list)]
@@ -307,6 +309,12 @@ def test_running_time_with_training_intensity(dataset, device, args, model_train
     wandb.log(
         {"Average cost of server": wandb.plot.line(server_cost_table, "Training intensity", "Server cost",
                                                    title="Average utility of server")})
+    # average user utility
+    client_utility_data = [[x, y] for (x, y) in zip(np.arange(200, 3000, 200), client_utility_list)]
+    client_utility_table = wandb.Table(data=client_utility_data, columns=["Training intensity", "Client utility"])
+    wandb.log(
+        {"Average cost of clients": wandb.plot.line(client_utility_table, "Training intensity", "Client utility",
+                                                    title="Average utility of clients")})
 
 
 if __name__ == "__main__":
