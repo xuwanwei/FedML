@@ -284,7 +284,7 @@ def test_truthfulness(dataset, device, args, model_trainer):
     truth_ratio_list = []
     utility_list = []
     logging.info("####################Truthfulness#####################")
-    for truth_ratio in np.arange(0.2, 2, 0.2):
+    for truth_ratio in np.arange(0.2, 2, 0.1):
         logging.info("Ratio:" + str(truth_ratio))
         test_result = fedtiAPI.train_for_truthfulness(truth_ratio=truth_ratio, is_show_info=False,
                                                       is_test_truthfulness=True)
@@ -388,6 +388,6 @@ if __name__ == "__main__":
     # fedtiAPI.train(True)
 
     # test running time, social cost vs training intensity
-    test_with_training_intensity(dataset, device, args, model_trainer)
+    # test_with_training_intensity(dataset, device, args, model_trainer)
     # test truthfulness
-    # test_truthfulness(dataset, device, args, model_trainer)
+    test_truthfulness(dataset, device, args, model_trainer)
