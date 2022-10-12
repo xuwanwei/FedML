@@ -29,6 +29,9 @@ class Bid:
     def get_cost(self):
         return self.cost
 
+    def get_training_intensity(self):
+        return self.training_intensity
+
     def update_average_cost_from_time(self, t_max):
         # version 2
         self.avg_cost = (max(0, self.time - t_max) + self.bidding_price) / self.training_intensity
@@ -37,3 +40,9 @@ class Bid:
 
     def update_bid_with_ratio(self, truth_ratio):
         self.bidding_price = truth_ratio * self.cost
+        # version 1
+        self.avg_cost = (self.time + self.bidding_price) / self.training_intensity
+        # version 2
+        # self.avg_cost = (max(0, self.time - t_max) + self.bidding_price) / self.training_intensity
+        # version 3
+        # self.avg_cost = (max(t_max, self.time) + self.bidding_price) / self.training_intensity
