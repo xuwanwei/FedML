@@ -79,7 +79,8 @@ class FedTiAPI(object):
             if is_test_truthfulness:
                 # self.client_list[truth_index].update_bid(training_intensity=80, cost=2, truth_ratio=truth_ratio,
                 #                                          computation_coefficient=0.035, communication_time=13)
-                np.random.seed(4)
+                # 4
+                np.random.seed(111)
                 truth_index = np.random.randint(0, len(self.client_list))
                 self.client_list[truth_index].update_bidding_price_with_ratio(truth_ratio)
                 logging.info(
@@ -90,11 +91,11 @@ class FedTiAPI(object):
 
             # WDP and Payment
             # version 1
-            client_indexes, payment = self._winners_determination()
+            # client_indexes, payment = self._winners_determination()
             # version 2
             # client_indexes, payment = self._winners_determination_2()
             # version 3
-            # client_indexes, payment = self._winners_determination_3()
+            client_indexes, payment = self._winners_determination_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -405,6 +406,8 @@ class FedTiAPI(object):
         training_intensity_tot = 0
 
         t_max = 0
+        winner_num = 0
+        max_client_num = self._get_max_client_num()
 
         while training_intensity_tot < self.args.training_intensity_per_round:
             if len(candidates) <= 1:
@@ -413,6 +416,7 @@ class FedTiAPI(object):
 
             # update avg_cost
             # find the smallest two client
+            '''
             winner_idx = candidates[0].client_idx
             winner_second_idx = -1
             candidates[0].update_average_cost_from_time(t_max)
@@ -431,15 +435,24 @@ class FedTiAPI(object):
                 elif winner_second_cost > bid.get_average_cost():
                     winner_second_cost = bid.get_average_cost()
                     winner_second_idx = bid.client_idx
+                '''
+            for bid in candidates[0:]:
+                bid.update_average_cost_from_time(t_max)
+            cmp = operator.attrgetter('avg_cost')
+            candidates.sort(key=cmp)
+            winner_idx = candidates[0].client_idx
+            critic_idx = candidates[max_client_num - winner_num].client_idx
+            winner_num += 1
 
             training_intensity_tot += self.client_list[winner_idx].get_training_intensity()
 
-            payment = self._get_payment_3(winner_idx, winner_second_idx, t_max)
+            payment = self._get_payment_3(winner_idx, critic_idx, t_max)
 
             winners_indexes.append(winner_idx)
             winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
+            training_intensity_tot += self.client_list[winner_idx].get_training_intensity()
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
@@ -465,6 +478,12 @@ class FedTiAPI(object):
         # version 2
         r_t = max(0, client_winner.get_time() - t_max)
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
+        logging.info("idx:{}, cost:{}, s_idx:{}, cost:{}, payment:{}, training intensity:{}".format(opt_index,
+                                                                                                    client_winner.get_average_cost(),
+                                                                                                    second_index,
+                                                                                                    client_second_winner.get_average_cost(),
+                                                                                                    payment * client_winner.get_training_intensity(),
+                                                                                                    client_winner.get_training_intensity()))
         return payment
 
     # max(T)
@@ -474,8 +493,13 @@ class FedTiAPI(object):
         # version 3
         r_t = max(client_winner.get_time(), t_max)
         payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
-        logging.info("second avg cost:{}, t_max:{}, winner training intensity:{}".format(
-            client_second_winner.get_average_cost(), r_t, client_winner.get_training_intensity()))
+        logging.info("idx:{}, cost:{}, s_idx:{}, cost:{}, payment:{}, training intensity:{}".format(opt_index,
+                                                                                                    client_winner.get_average_cost(),
+                                                                                                    second_index,
+                                                                                                    client_second_winner.get_average_cost(),
+                                                                                                    payment * client_winner.get_training_intensity(),
+                                                                                                    client_winner.get_training_intensity()))
+
         return payment
 
     def _get_max_client_num(self):
