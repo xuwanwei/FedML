@@ -45,9 +45,13 @@ class FedTiAPI(object):
     def train(self, is_show_info):
         return self.train_for_truthfulness(truth_ratio=1, is_show_info=is_show_info, is_test_truthfulness=False)
 
+    def _train_3(self):
+        winners, _ = self._winners_determination_3()
+        payment = self._get_payment_3(winners)
+        return winners, payment
+
     # used to test truthfulness
     def train_for_truthfulness(self, truth_ratio, is_show_info, is_test_truthfulness):
-        w_global = self.model_trainer.get_model_params()
         np.random.seed(self.args.comm_round)
 
         payment_list = []
@@ -61,8 +65,6 @@ class FedTiAPI(object):
         for round_idx in range(self.args.comm_round):
 
             logging.info("################Communication round : {}".format(round_idx))
-
-            w_locals = []
 
             """
             for scalability: following the original FedAvg algorithm, we uniformly sample a fraction of clients in each round.
@@ -80,7 +82,8 @@ class FedTiAPI(object):
                 # self.client_list[truth_index].update_bid(training_intensity=80, cost=2, truth_ratio=truth_ratio,
                 #                                          computation_coefficient=0.035, communication_time=13)
                 # 4
-                np.random.seed(111)
+                np.random.seed(3123124)
+
                 truth_index = np.random.randint(0, len(self.client_list))
                 self.client_list[truth_index].update_bidding_price_with_ratio(truth_ratio)
                 logging.info(
@@ -95,7 +98,7 @@ class FedTiAPI(object):
             # version 2
             # client_indexes, payment = self._winners_determination_2()
             # version 3
-            client_indexes, payment = self._winners_determination_3()
+            client_indexes, payment = self._train_3()
             logging.info("winners_client_indexes = " + str(client_indexes))
 
             t_max = 0
@@ -106,22 +109,15 @@ class FedTiAPI(object):
             for idx, client_idx in enumerate(client_indexes):
                 client = self.client_list[int(client_idx)]
 
-                client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
-                                            self.test_data_local_dict[client_idx],
-                                            self.train_data_local_num_dict[client_idx])
-                # train on new dataset
-                # w = client.train(copy.deepcopy(w_global))
-                # w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+                # client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
+                #                             self.test_data_local_dict[client_idx],
+                #                             self.train_data_local_num_dict[client_idx])
 
                 t_max = max(t_max, client.get_time())
                 client_cost_tot += client.get_cost()
                 client_payment_tot += payment[idx] * client.get_training_intensity()
                 # distribute payment
                 client.receive_payment(payment[idx])
-
-            # update global weights
-            # w_global = self._aggregate(w_locals)
-            # self.model_trainer.set_model_params(w_global)
 
             running_time_list.append(t_max)
             social_cost_list.append(t_max + client_cost_tot)
@@ -396,67 +392,45 @@ class FedTiAPI(object):
         return winners_indexes, winners_payment
 
     # version 3
-    def _winners_determination_3(self):
+    def _winners_determination_3(self, exc_index=None):
         winners_indexes = []
-        winners_payment = []
+        time_list = []
         candidates = []
         for client in self.client_list:
+            if exc_index and exc_index == client.client_idx:
+                continue
             candidates.append(client.bid)
 
         training_intensity_tot = 0
 
         t_max = 0
         winner_num = 0
-        max_client_num = self._get_max_client_num()
 
         while training_intensity_tot < self.args.training_intensity_per_round:
             if len(candidates) <= 1:
                 logging.info("Not enough client to fulfill training intensity guarantee")
                 break
 
+            time_list.append(t_max)
             # update avg_cost
-            # find the smallest two client
-            '''
-            winner_idx = candidates[0].client_idx
-            winner_second_idx = -1
-            candidates[0].update_average_cost_from_time(t_max)
-            winner_cost = candidates[0].get_average_cost()
-            winner_second_cost = 0
-            for bid in candidates[1:]:
-                bid.update_average_cost_from_time(t_max)
-                if winner_cost > bid.get_average_cost():
-                    winner_second_idx = winner_idx
-                    winner_second_cost = winner_cost
-                    winner_idx = bid.client_idx
-                    winner_cost = bid.get_average_cost()
-                elif winner_second_idx == -1:
-                    winner_second_idx = bid.client_idx
-                    winner_second_cost = bid.get_average_cost()
-                elif winner_second_cost > bid.get_average_cost():
-                    winner_second_cost = bid.get_average_cost()
-                    winner_second_idx = bid.client_idx
-                '''
             for bid in candidates[0:]:
                 bid.update_average_cost_from_time(t_max)
             cmp = operator.attrgetter('avg_cost')
             candidates.sort(key=cmp)
             winner_idx = candidates[0].client_idx
-            critic_idx = candidates[max_client_num - winner_num].client_idx
+            # critic_idx = candidates[max_client_num - winner_num].client_idx
             winner_num += 1
 
             training_intensity_tot += self.client_list[winner_idx].get_training_intensity()
 
-            payment = self._get_payment_3(winner_idx, critic_idx, t_max)
-
             winners_indexes.append(winner_idx)
-            winners_payment.append(payment)
             candidates.remove(self.client_list[winner_idx].bid)
             t_max = max(t_max, self.client_list[winner_idx].get_time())
             training_intensity_tot += self.client_list[winner_idx].get_training_intensity()
 
         logging.info("winners: " + str(winners_indexes))
         logging.info('winner t_max:{}'.format(t_max))
-        return winners_indexes, winners_payment
+        return winners_indexes, time_list
 
     def _get_payment(self, opt_index, second_index):
         client_second_winner = self.client_list[second_index]
@@ -487,19 +461,27 @@ class FedTiAPI(object):
         return payment
 
     # max(T)
-    def _get_payment_3(self, opt_index, second_index, t_max):
-        client_second_winner = self.client_list[second_index]
-        client_winner = self.client_list[opt_index]
-        # version 3
-        r_t = max(client_winner.get_time(), t_max)
-        payment = client_second_winner.get_average_cost() - r_t / client_winner.get_training_intensity()
-        logging.info("idx:{}, cost:{}, s_idx:{}, cost:{}, payment:{}, training intensity:{}".format(opt_index,
-                                                                                                    client_winner.get_average_cost(),
-                                                                                                    second_index,
-                                                                                                    client_second_winner.get_average_cost(),
-                                                                                                    payment * client_winner.get_training_intensity(),
-                                                                                                    client_winner.get_training_intensity()))
-
+    def _get_payment_3(self, winners_index):
+        payment = []
+        for opt_index in winners_index:
+            client_winner = self.client_list[opt_index]
+            exc_winners_index, time_list = self._winners_determination_3(exc_index=opt_index)
+            mx_cost = 0
+            for idx, client_idx in enumerate(exc_winners_index):
+                client_i = self.client_list[client_idx]
+                # version 3 max{T}
+                # r_t_w = max(time_list[idx], client_winner.get_time())
+                # r_t_i = max(time_list[idx], client_i.get_time())
+                # version 2
+                r_t_w = max(0, client_winner.get_time() - time_list[idx])
+                r_t_i = max(0, client_i.get_time() - time_list[idx])
+                cost_i = float(
+                    r_t_i + client_i.get_bidding_price()) / client_i.get_training_intensity() - r_t_w / client_winner.get_training_intensity()
+                if cost_i > mx_cost:
+                    mx_cost = cost_i
+            payment.append(mx_cost)
+            logging.info("getting payment for:{}, get:{}, exc winners:{}".format(opt_index, mx_cost, exc_winners_index))
+        logging.info("payment:{}".format(payment))
         return payment
 
     def _get_max_client_num(self):

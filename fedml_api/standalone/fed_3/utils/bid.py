@@ -2,6 +2,7 @@ class Bid:
 
     def __init__(self, client_idx, training_intensity, cost, bidding_price, computation_coefficient,
                  communication_time):
+        """client_idx is the index of the client in fedb_api.client_list"""
         self.client_idx = client_idx
         self.training_intensity = training_intensity
         self.cost = cost
@@ -18,7 +19,7 @@ class Bid:
         self.computation_coefficient = computation_coefficient
         self.communication_time = communication_time
         self.time = self.training_intensity * self.computation_coefficient + self.communication_time
-        self.avg_cost = (self.time + self.bidding_price) / self.training_intensity
+        self.avg_cost = self.training_intensity / self.bidding_price
 
     def get_time(self):
         return self.time
@@ -32,13 +33,8 @@ class Bid:
     def get_training_intensity(self):
         return self.training_intensity
 
-    def update_average_cost_from_time(self, t_max):
-        # version 2
-        self.avg_cost = (max(0, self.time - t_max) + self.bidding_price) / self.training_intensity
-        # version 3
-        # self.avg_cost = (max(t_max, self.time) + self.bidding_price) / self.training_intensity
+    def update_avg_cost(self):
+        self.avg_cost = self.training_intensity / self.bidding_price
 
     def update_bid_with_ratio(self, truth_ratio):
         self.bidding_price = truth_ratio * self.cost
-        # version 1
-        # self.avg_cost = (self.time + self.bidding_price) / self.training_intensity
