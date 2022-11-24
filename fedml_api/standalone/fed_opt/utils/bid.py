@@ -39,4 +39,5 @@ class Bid:
     def update_bid_with_ratio(self, truth_ratio):
         self.bidding_price = truth_ratio * self.cost
 
-
+    def get_bidding_price(self):
+        return self.bidding_price

@@ -86,7 +86,7 @@ def draw_accuracy(file_name):
             round_list.append(int(row[0]))
             acc_list.append(float(row[1]))
 
-    plt.plot(round_list, acc_list, marker='o')
+    plt.plot(round_list, acc_list)
     plt.title("Tested Accuracy")
     plt.ylabel("Accuracy")
     plt.xlabel("Rounds")
@@ -106,7 +106,7 @@ def draw_loss(file_name):
             loss_list.append(float(row[1]))
 
     print("round_list:{}".format(round_list))
-    plt.plot(round_list, loss_list, marker='o')
+    plt.plot(round_list, loss_list)
     plt.title("Loss")
     plt.ylabel("Loss")
     plt.xlabel("Rounds")
