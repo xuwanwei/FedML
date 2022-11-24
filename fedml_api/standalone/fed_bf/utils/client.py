@@ -1,4 +1,4 @@
-from fedml_api.standalone.fed_opt.utils.bid import Bid
+from fedml_api.standalone.fed_bf.utils.bid import Bid
 
 
 class Client:

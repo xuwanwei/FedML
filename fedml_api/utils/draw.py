@@ -1,10 +1,22 @@
 import csv
 import logging
+import time
 
 from matplotlib import pyplot as plt
 
-DATA_PATH = "../../../OutputData/fed_opt"
-IMG_PATH = "../../../OutputImage/fed_opt"
+DATA_PATH = "../../../OutputData/fed_3"
+IMG_PATH = "../../../OutputImage/fed_3"
+
+filename_3 = "fed3-1103-INFO-2022-11-24-19-25"
+filename_opt = "fedopt-1103-INFO-2022-11-24-21-38"
+filename_bf = "fedbf-1103-INFO-2022-11-24-22-12"
+DATA_PATH_3 = "../../../OutputData/fed_3"
+DATA_PATH_OPT = "../../../OutputData/fed_opt"
+DATA_PATH_BF = "../../../OutputData/fed_bf"
+timestamp = time.time()
+datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
+file_name = 'fedopt-{}-INFO-{}'.format(1103, datatime)
+OUTPUT_FILENAME = "fed3-opt-bf-{}".format(datatime)
 
 
 def draw_IC(file_name):
@@ -135,139 +147,190 @@ def draw_time(file_name):
     plt.show()
 
 
-def draw_accuracy_cmp(output_filename, filename1, filename2, data_path_1, data_path_2):
+def draw_accuracy_cmp():
     round_list = []
     acc_list_1 = []
     acc_list_2 = []
-    with open("{}/{}.csv".format(data_path_1, filename1), mode="r", encoding="utf-8-sig") as f:
+    acc_list_3 = []
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[1]))
             round_list.append(int(row[0]))
             acc_list_1.append(float(row[1]))
 
-    with open("{}/{}.csv".format(data_path_2, filename2), mode="r", encoding="utf-8-sig") as f:
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[1]))
             acc_list_2.append(float(row[1]))
 
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[1]))
+            acc_list_3.append(float(row[1]))
+
     plt.plot(round_list, acc_list_1)
     plt.plot(round_list, acc_list_2)
+    plt.plot(round_list, acc_list_3)
     plt.title("Tested Accuracy")
     plt.ylabel("Accuracy")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal'])
-    plt.savefig("{}/{}.png".format(IMG_PATH, output_filename))
+    plt.legend(['ours', 'optimal', 'bid price first'])
+    output_filename = "ACC-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH, output_filename))
     plt.show()
 
 
-def draw_loss_cmp(output_filename, filename1, filename2, data_path_1, data_path_2):
+def draw_loss_cmp():
     round_list = []
     loss_list_1 = []
     loss_list_2 = []
-    with open("{}/{}.csv".format(data_path_1, filename1), mode="r", encoding="utf-8-sig") as f:
+    loss_list_3 = []
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[2]))
             round_list.append(int(row[0]))
             loss_list_1.append(float(row[2]))
 
-    with open("{}/{}.csv".format(data_path_2, filename2), mode="r", encoding="utf-8-sig") as f:
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[2]))
             loss_list_2.append(float(row[2]))
 
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[2]))
+            loss_list_3.append(float(row[2]))
+
     plt.plot(round_list, loss_list_1)
     plt.plot(round_list, loss_list_2)
+    plt.plot(round_list, loss_list_3)
+
     plt.title("Tested Loss")
     plt.ylabel("Loss")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal'])
-    plt.savefig("{}/{}.png".format(IMG_PATH, output_filename))
+    plt.legend(['ours', 'optimal', 'bid price first'])
+    output_filename = "LOSS-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH, output_filename))
     plt.show()
 
 
-def draw_time_cmp(output_filename, filename1, filename2, data_path_1, data_path_2):
+def draw_time_cmp():
     round_list = []
     time_list_1 = []
     time_list_2 = []
-    with open("{}/{}.csv".format(data_path_1, filename1), mode="r", encoding="utf-8-sig") as f:
+    time_list_3 = []
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[3]))
             round_list.append(int(row[0]))
             time_list_1.append(float(row[3]))
 
-    with open("{}/{}.csv".format(data_path_2, filename2), mode="r", encoding="utf-8-sig") as f:
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[3]))
             time_list_2.append(float(row[3]))
 
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[3]))
+            time_list_3.append(float(row[3]))
+
     logging.info("round_list:{}".format(round_list))
     plt.plot(round_list, time_list_1)
     plt.plot(round_list, time_list_2)
+    plt.plot(round_list, time_list_3)
+
     plt.title("Time")
     plt.ylabel("Time")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal'])
-    plt.savefig("{}/{}.png".format(IMG_PATH, output_filename))
+    plt.legend(['ours', 'optimal', 'bid price first'])
+    output_filename = "TIME-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH, output_filename))
     plt.show()
 
 
-def draw_training_intensity_sum_cmp(output_filename, filename1, filename2, data_path_1, data_path_2):
+def draw_training_intensity_sum_cmp():
     round_list = []
     time_list_1 = []
     time_list_2 = []
-    with open("{}/{}.csv".format(data_path_1, filename1), mode="r", encoding="utf-8-sig") as f:
+    time_list_3 = []
+
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[4]))
             round_list.append(int(row[0]))
             time_list_1.append(float(row[4]))
 
-    with open("{}/{}.csv".format(data_path_2, filename2), mode="r", encoding="utf-8-sig") as f:
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, acc:{}".format(row[0], row[4]))
             time_list_2.append(float(row[4]))
 
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[4]))
+            time_list_3.append(float(row[4]))
+
     logging.info("round_list:{}".format(round_list))
     plt.plot(round_list, time_list_1)
     plt.plot(round_list, time_list_2)
+    plt.plot(round_list, time_list_3)
+
     plt.title("Total Training Intensity")
     plt.ylabel("Total Training Intensity")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal'])
-    plt.savefig("{}/{}.png".format(IMG_PATH, output_filename))
+    plt.legend(['ours', 'optimal', 'bid price first'])
+    output_filename = "TI-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH, output_filename))
     plt.show()
 
 
-def draw_goal_cmp(output_filename, filename1, filename2, data_path_1, data_path_2):
+def draw_goal_cmp():
     round_list = []
     goal_list_1 = []
     goal_list_2 = []
-    with open("{}/{}.csv".format(data_path_1, filename1), mode="r", encoding="utf-8-sig") as f:
+    goal_list_3 = []
+
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, goal:{}".format(row[0], float(row[4]) / float(row[3])))
             round_list.append(int(row[0]))
             goal_list_1.append(float(row[4]) / float(row[3]))
 
-    with open("{}/{}.csv".format(data_path_2, filename2), mode="r", encoding="utf-8-sig") as f:
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
             print("round:{}, goal:{}".format(row[0], float(row[4]) / float(row[3])))
             goal_list_2.append(float(row[4]) / float(row[3]))
 
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, goal:{}".format(row[0], float(row[4]) / float(row[3])))
+            goal_list_3.append(float(row[4]) / float(row[3]))
+
     logging.info("round_list:{}".format(round_list))
     plt.plot(round_list, goal_list_1)
     plt.plot(round_list, goal_list_2)
+    plt.plot(round_list, goal_list_3)
+
     plt.title("Goal")
     plt.ylabel("Goal")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal'])
-    plt.savefig("{}/{}.png".format(IMG_PATH, output_filename))
+    plt.legend(['ours', 'optimal', 'bid price first'])
+    output_filename = "GOAL-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH, output_filename))
     plt.show()

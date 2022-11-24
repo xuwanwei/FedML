@@ -18,7 +18,7 @@
 #--draw True
 
 # test with rounds
-python ./main_fed3.py \
+python ./main_fedbf.py \
 --gpu 0 \
 --dataset mnist \
 --data_dir ./../../../data/mnist \

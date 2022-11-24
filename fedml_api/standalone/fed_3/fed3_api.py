@@ -138,9 +138,9 @@ class Fed3API(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(5, 100), cost=np.random.random() * 5.0 + 2.0,
+                client.update_bid(training_intensity=np.random.randint(1, 5), cost=np.random.random() * 5.0 + 2.0,
                                   truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
-                                  communication_time=np.random.randint(10, 15))
+                                  communication_time=np.random.randint(5, 10))
 
             client_indexes, _, payment = self._get_winners()
 
