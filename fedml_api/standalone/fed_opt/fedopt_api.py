@@ -79,17 +79,19 @@ class FedOptAPI(object):
 
     def train(self):
         w_global = self.model_trainer.get_model_params()
+        np.random.seed(self.args.seed)
 
         accuracy_list = []
         loss_list = []
         time_list = []
+        ti_sum_list = []
         round_list = []
 
         for round_idx in range(self.args.comm_round):
             logging.info("################Communication round : {}".format(round_idx))
             w_locals = []
-
-            np.random.seed(self.args.seed)
+            t_max = 0
+            ti_sum = 0
 
             # bids init
             for client in self.client_list:
@@ -98,8 +100,10 @@ class FedOptAPI(object):
                                   communication_time=np.random.randint(10, 15))
 
             client_indexes, _ = self._get_winners()
-
             logging.info("client selected:{}".format(client_indexes))
+
+            if len(client_indexes) == 0:
+                continue
 
             # train on winners
             for idx, client_idx in enumerate(client_indexes):
@@ -113,10 +117,16 @@ class FedOptAPI(object):
                 w = client.train(copy.deepcopy(w_global))
                 # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+                t_max = max(t_max, client.get_time())
+                ti_sum += client.get_training_intensity()
 
                 # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
+
+            # time
+            time_list.append(t_max)
+            ti_sum_list.append(ti_sum)
 
             # test results
             # at last round
@@ -134,23 +144,26 @@ class FedOptAPI(object):
             accuracy_list.append(acc)
             loss_list.append(loss)
             round_list.append(m_round_idx)
-        return accuracy_list, loss_list, round_list
+        return accuracy_list, loss_list, time_list, ti_sum_list, round_list
 
     def _dfs(self, candidate_selected, bid_idx, sum_ti, sum_p):
-        logging.info("bid_idx:{}, len:{}".format(bid_idx, len(self.candidates)-1))
-        if bid_idx == len(self.candidates):
+        # if bid_idx % 10 == 0:
+        #     logging.info("bid_idx:{}, len:{}".format(bid_idx, len(self.candidates)))
+        if bid_idx >= len(self.candidates):
             return
         bid = self.candidates[bid_idx]
         self._dfs(candidate_selected, bid_idx + 1, sum_ti, sum_p)
         if sum_p + bid.get_bidding_price() < self.args.budget_per_round:
             candidate_selected[bid_idx] = 1
             if sum_ti + bid.get_training_intensity() > self.mx_training_intensity:
+                logging.info("selected {}, len candidate selected:{}".format(bid_idx, len(candidate_selected)))
                 self.mx_training_intensity = sum_ti + bid.get_training_intensity()
-                self.candidate_selected = candidate_selected
-            candidate_selected[bid_idx] = 1
+                self.candidate_selected = copy.deepcopy(candidate_selected)
             self._dfs(candidate_selected, bid_idx + 1, sum_ti + bid.get_training_intensity(),
                       sum_p + bid.get_bidding_price())
             candidate_selected[bid_idx] = 0
+
+    # def _dp(self):
 
     def _winners_determination(self, m_client_list=None):
         """
@@ -173,11 +186,18 @@ class FedOptAPI(object):
         self.candidates = candidates
 
         # DFS
-        candidates_selected = np.zeros(len(candidates))
+        candidates_selected = np.zeros(len(self.candidates))
+        self.candidate_selected = np.zeros(len(self.candidates))
+        self.mx_training_intensity = 0
+        self.t_max = 0
+
+        logging.info("candidate len:{}, selected len:{}".format(len(self.candidates), len(candidates_selected)))
         self._dfs(candidates_selected, 0, 0, 0)
+        logging.info("candidate len:{}, selected len:{}".format(len(self.candidates), len(self.candidate_selected)))
         for bid_idx, bid_val in enumerate(self.candidate_selected):
             if bid_val == 1:
-                winners_indexes.append(self.candidates[bid_idx].client_index)
+                winners_indexes.append(self.candidates[bid_idx].client_idx)
+        logging.info("winners:{}".format(winners_indexes))
 
         return winners_indexes
 
@@ -199,8 +219,11 @@ class FedOptAPI(object):
         :param winners: List(int)
         :return: int
         '''
+        if len(winners) == 0:
+            return 0
         t_max = 0
         tot_training_intensity = 0
+        logging.info("getting utility for {}".format(winners))
         for index in winners:
             client = self.client_list[index]
             t_max = max(t_max, client.get_time())

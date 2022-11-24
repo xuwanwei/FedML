@@ -44,6 +44,7 @@ from fedml_api.utils.draw import draw_individual_rationality
 from fedml_api.utils.draw import draw_budget_balance
 from fedml_api.utils.draw import draw_accuracy
 from fedml_api.utils.draw import draw_loss
+from fedml_api.utils.draw import draw_time
 
 
 def add_args(parser):
@@ -385,32 +386,24 @@ def test_individual_rationality(device, args, dataset, model_trainer):
 
 def test_with_rounds(dataset, device, args, model_trainer):
     fed3API = Fed3API(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
-    acc_list, loss_list, round_list = fed3API.train()
+    acc_list, loss_list, time_list, ti_sum_list, round_list = fed3API.train()
 
-    acc_data = [[x, y] for (x, y) in zip(round_list, acc_list)]
-    loss_data = [[x, y] for (x, y) in zip(round_list, loss_list)]
+    data_table = [[r, acc, loss, t, ti_sum] for (r, acc, loss, t, ti_sum) in
+                  zip(round_list, acc_list, loss_list, time_list, ti_sum_list)]
 
-    # accuracy
+    # writing data to file
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fed3-{}-ACC-{}'.format(args.seed, datatime)
+    file_name = 'fed3-{}-INFO-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerows(acc_data)
+        writer.writerows(data_table)
 
     if args.draw:
         draw_accuracy(file_name)
-
-    # loss
-    file_name = 'fed3-{}-LOSS-{}'.format(args.seed, datatime)
-    print("writing {}".format(file_name))
-    with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(loss_data)
-
-    if args.draw:
         draw_loss(file_name)
+        draw_time(file_name)
 
 
 if __name__ == "__main__":

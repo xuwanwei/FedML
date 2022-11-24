@@ -1,6 +1,7 @@
 import copy
 import logging
 import operator
+import random
 
 import numpy as np
 import wandb
@@ -120,18 +121,20 @@ class Fed3API(object):
         return TestInfo(tot_payment=tot_payment, true_cost=real_cost, payment=client_payment)
 
     def train(self):
+        np.random.seed(self.args.seed)
         w_global = self.model_trainer.get_model_params()
 
         accuracy_list = []
         loss_list = []
         time_list = []
+        ti_sum_list = []
         round_list = []
 
         for round_idx in range(self.args.comm_round):
             logging.info("################Communication round : {}".format(round_idx))
+            t_max = 0
+            ti_sum = 0
             w_locals = []
-
-            np.random.seed(self.args.seed)
 
             # bids init
             for client in self.client_list:
@@ -152,15 +155,21 @@ class Fed3API(object):
                                             self.train_data_local_num_dict[client_idx])
                 # distribute payment
                 client.receive_payment(payment[idx])
+                t_max = max(t_max, client.get_time())
+                ti_sum += client.get_training_intensity()
 
                 # train on new dataset
                 w = client.train(copy.deepcopy(w_global))
                 # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
 
-                # update global weights
+            # update global weights
             w_global = self._aggregate(w_locals)
             self.model_trainer.set_model_params(w_global)
+
+            # time, sum training intensity results
+            time_list.append(t_max)
+            ti_sum_list.append(ti_sum)
 
             # test results
             # at last round
@@ -178,7 +187,7 @@ class Fed3API(object):
             accuracy_list.append(acc)
             loss_list.append(loss)
             round_list.append(m_round_idx)
-        return accuracy_list, loss_list, round_list
+        return accuracy_list, loss_list, time_list, ti_sum_list, round_list
 
     # used to test truthfulness
     def train_for_truthfulness(self, truth_ratio):
