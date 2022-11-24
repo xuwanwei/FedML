@@ -387,8 +387,12 @@ def test_individual_rationality(device, args, dataset, model_trainer):
 def test_with_rounds(dataset, device, args, model_trainer):
     fed_optAPI = FedOptAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
     acc_list, loss_list, time_list, ti_sum_list, round_list = fed_optAPI.train()
-    data_table = [[r, acc, loss, t, ti_sum] for (r, acc, loss, t, ti_sum) in
-                  zip(round_list, acc_list, loss_list, time_list, ti_sum_list)]
+    goal_list = []
+    for idx, ti_val in enumerate(ti_sum_list):
+        goal_list.append(float(ti_val) / float(time_list[idx]))
+
+    data_table = [[r, acc, loss, t, ti_sum, goal] for (r, acc, loss, t, ti_sum, goal) in
+                  zip(round_list, acc_list, loss_list, time_list, ti_sum_list, goal_list)]
 
     # writing data to file
     timestamp = time.time()

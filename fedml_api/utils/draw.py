@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 DATA_PATH = "../../../OutputData/fed_3"
 IMG_PATH = "../../../OutputImage/fed_3"
 
-filename_3 = "fed3-1103-INFO-2022-11-24-19-25"
-filename_opt = "fedopt-1103-INFO-2022-11-24-21-38"
-filename_bf = "fedbf-1103-INFO-2022-11-24-22-12"
+filename_3 = "fed3-1104-INFO-2022-11-25-00-19"
+filename_opt = "fedopt-1104-INFO-2022-11-25-00-20"
+filename_bf = "fedbf-1104-INFO-2022-11-25-00-20"
 DATA_PATH_3 = "../../../OutputData/fed_3"
 DATA_PATH_OPT = "../../../OutputData/fed_opt"
 DATA_PATH_BF = "../../../OutputData/fed_bf"

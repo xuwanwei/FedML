@@ -79,7 +79,6 @@ class FedOptAPI(object):
 
     def train(self):
         w_global = self.model_trainer.get_model_params()
-        np.random.seed(self.args.seed)
 
         accuracy_list = []
         loss_list = []
@@ -88,6 +87,7 @@ class FedOptAPI(object):
         round_list = []
 
         for round_idx in range(self.args.comm_round):
+            np.random.seed(self.args.seed * round_idx)
             logging.info("################Communication round : {}".format(round_idx))
             w_locals = []
             t_max = 0
@@ -147,8 +147,6 @@ class FedOptAPI(object):
         return accuracy_list, loss_list, time_list, ti_sum_list, round_list
 
     def _dfs(self, candidate_selected, bid_idx, sum_ti, sum_p):
-        # if bid_idx % 10 == 0:
-        #     logging.info("bid_idx:{}, len:{}".format(bid_idx, len(self.candidates)))
         if bid_idx >= len(self.candidates):
             return
         bid = self.candidates[bid_idx]
@@ -156,14 +154,11 @@ class FedOptAPI(object):
         if sum_p + bid.get_bidding_price() < self.args.budget_per_round:
             candidate_selected[bid_idx] = 1
             if sum_ti + bid.get_training_intensity() > self.mx_training_intensity:
-                logging.info("selected {}, len candidate selected:{}".format(bid_idx, len(candidate_selected)))
                 self.mx_training_intensity = sum_ti + bid.get_training_intensity()
                 self.candidate_selected = copy.deepcopy(candidate_selected)
             self._dfs(candidate_selected, bid_idx + 1, sum_ti + bid.get_training_intensity(),
                       sum_p + bid.get_bidding_price())
             candidate_selected[bid_idx] = 0
-
-    # def _dp(self):
 
     def _winners_determination(self, m_client_list=None):
         """
@@ -191,9 +186,7 @@ class FedOptAPI(object):
         self.mx_training_intensity = 0
         self.t_max = 0
 
-        logging.info("candidate len:{}, selected len:{}".format(len(self.candidates), len(candidates_selected)))
         self._dfs(candidates_selected, 0, 0, 0)
-        logging.info("candidate len:{}, selected len:{}".format(len(self.candidates), len(self.candidate_selected)))
         for bid_idx, bid_val in enumerate(self.candidate_selected):
             if bid_val == 1:
                 winners_indexes.append(self.candidates[bid_idx].client_idx)

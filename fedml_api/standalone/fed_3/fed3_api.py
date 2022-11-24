@@ -121,7 +121,6 @@ class Fed3API(object):
         return TestInfo(tot_payment=tot_payment, true_cost=real_cost, payment=client_payment)
 
     def train(self):
-        np.random.seed(self.args.seed)
         w_global = self.model_trainer.get_model_params()
 
         accuracy_list = []
@@ -131,6 +130,7 @@ class Fed3API(object):
         round_list = []
 
         for round_idx in range(self.args.comm_round):
+            np.random.seed(self.args.seed * round_idx)
             logging.info("################Communication round : {}".format(round_idx))
             t_max = 0
             ti_sum = 0
