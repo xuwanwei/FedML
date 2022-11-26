@@ -215,13 +215,12 @@ class FedOptAPI(object):
                 candidates.append(client.bid)
         self.candidates = candidates
 
-        self.mx_training_intensity = 0
         self.t_max = 0
 
         # LP
         model = pl.LpProblem(name="LP_winners", sense=pl.LpMaximize)
 
-        x = [pl.LpVariable(name=f"x{i}", lowBound=0, upBound=1, cat=pl.LpInteger) for i in range(1, len(candidates))]
+        x = [pl.LpVariable(name=f"x{i}", lowBound=0, upBound=1, cat=pl.LpInteger) for i in range(0, len(candidates))]
         # training intensity list
         ti_a = [bid.get_training_intensity() for bid in candidates]
         # payment list, bidding price list
@@ -232,11 +231,11 @@ class FedOptAPI(object):
         model += (pl.lpDot(payment_a, x) <= self.args.budget_per_round)
         model.solve()
 
-        logging.info("winners:{}".format(winners_indexes))
         for idx, var in enumerate(model.variables()):
             if var.value() == 1:
                 winners_indexes.append(candidates[idx].client_idx)
 
+        logging.info("winners:{}".format(winners_indexes))
         return winners_indexes
 
     def _get_cost(self, winners):
