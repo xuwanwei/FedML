@@ -7,7 +7,7 @@ python ./main_fedopt.py \
 --partition_method hetero \
 --client_num_in_total 20 \
 --client_num_per_round 6 \
---comm_round 50 \
+--comm_round 20 \
 --epochs 5 \
 --batch_size 10 \
 --client_optimizer sgd \

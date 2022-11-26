@@ -45,6 +45,9 @@ from fedml_api.utils.draw import draw_budget_balance
 from fedml_api.utils.draw import draw_accuracy
 from fedml_api.utils.draw import draw_loss
 from fedml_api.utils.draw import draw_time
+from fedml_api.utils.draw import draw_accuracy_budget
+from fedml_api.utils.draw import draw_loss_budget
+from fedml_api.utils.draw import draw_time_budget
 
 
 def add_args(parser):
@@ -295,7 +298,7 @@ def custom_model_trainer(args, model):
 
 
 def test_truthfulness(device, args, dataset, model_trainer):
-    fed_bfAPI = fedbfAPI(device, args, dataset=dataset, model_trainer=model_trainer)
+    fed_bfAPI = FedBFAPI(device, args, dataset=dataset, model_trainer=model_trainer)
     truth_ratio_list = []
     utility_list = []
     logging.info("####################Truthfulness#####################")
@@ -403,10 +406,56 @@ def test_with_rounds(dataset, device, args, model_trainer):
         writer = csv.writer(f)
         writer.writerows(data_table)
 
-    if args.draw:
+    if args.draw is True:
         draw_accuracy(file_name)
         draw_loss(file_name)
         draw_time(file_name)
+
+
+def test_with_budget(dataset, device, args, model_trainer):
+    acc_list = []
+    loss_list = []
+    time_list = []
+    ti_sum_list = []
+    goal_list = []
+    budget_list = []
+    for budget in range(8, 21, 4):
+        fed3API = FedBFAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
+        t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fed3API.train()
+        t_goal_list = []
+        for idx, ti_val in enumerate(t_ti_sum_list):
+            t_goal_list.append(float(ti_val) / float(t_time_list[idx]))
+
+        if len(t_acc_list) == 0:
+            acc_list.append(0)
+            loss_list.append(0)
+            time_list.append(0)
+            ti_sum_list.append(0)
+            goal_list.append(0)
+        else:
+            acc_list.append(t_acc_list[-1])
+            loss_list.append(t_loss_list[-1])
+            time_list.append(t_time_list[-1])
+            ti_sum_list.append(t_ti_sum_list[-1])
+            goal_list.append(t_goal_list[-1])
+        budget_list.append(budget)
+
+    data_table = [[b, acc, loss, t, ti_sum, goal] for (b, acc, loss, t, ti_sum, goal) in
+                  zip(budget_list, acc_list, loss_list, time_list, ti_sum_list, goal_list)]
+
+    # writing data to file
+    timestamp = time.time()
+    datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
+    file_name = 'fedBF-{}-B-INFO-{}'.format(args.seed, datatime)
+    print("writing {}".format(file_name))
+    with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(data_table)
+
+    if args.draw is True:
+        draw_accuracy_budget(file_name)
+        draw_loss_budget(file_name)
+        draw_time_budget(file_name)
 
 
 if __name__ == "__main__":
@@ -454,3 +503,5 @@ if __name__ == "__main__":
 
     # Test Accuracy and Time
     test_with_rounds(dataset, device, args, model_trainer)
+
+    # test_with_budget(dataset, device, args, model_trainer)

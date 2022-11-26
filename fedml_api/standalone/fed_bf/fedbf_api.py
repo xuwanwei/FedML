@@ -12,6 +12,12 @@ from fedml_api.utils.testInfo import TestInfo
 from fedml_api.standalone.fed_bf.utils.utils_func import *
 
 
+def _init_client_bid(client):
+    client.update_bid(training_intensity=np.random.randint(1, 10), cost=np.random.randint(2, 10),
+                      truth_ratio=1, computation_coefficient=np.random.rand() * 0.8,
+                      communication_time=np.random.randint(5, 10))
+
+
 class FedBFAPI(object):
     def __init__(self, device, args, dataset=None, model_trainer=None):
         self.device = device
@@ -83,9 +89,7 @@ class FedBFAPI(object):
     def test_properties(self):
         # bids init
         for client in self.client_list:
-            client.update_bid(training_intensity=np.random.randint(5, 100), cost=np.random.random() * 5.0 + 2.0,
-                              truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
-                              communication_time=np.random.randint(10, 15))
+            _init_client_bid(client)
 
         client_indexes, mn_cost, payment = self._get_winners()
         logging.info('winners:{}'.format(client_indexes))
@@ -124,9 +128,7 @@ class FedBFAPI(object):
 
             # bids init
             for client in self.client_list:
-                client.update_bid(training_intensity=np.random.randint(1, 5), cost=np.random.random() * 5.0 + 2.0,
-                                  truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
-                                  communication_time=np.random.randint(5, 10))
+                _init_client_bid(client)
 
             client_indexes, _, payment = self._get_winners()
 
@@ -181,9 +183,7 @@ class FedBFAPI(object):
 
         # bids init
         for client in self.client_list:
-            client.update_bid(training_intensity=np.random.randint(1, 5), cost=np.random.random() * 5 + 2,
-                              truth_ratio=1, computation_coefficient=np.random.rand() * 0.2,
-                              communication_time=np.random.randint(10, 15))
+            _init_client_bid(client)
 
         # choose one bid in one particular round to test truthfulness
         truth_index = np.random.randint(0, len(self.client_list))
@@ -311,6 +311,8 @@ class FedBFAPI(object):
             client = self.client_list[index]
             t_max = max(t_max, client.get_time())
             tot_training_intensity += client.get_training_intensity()
+        if len(winners) == 0:
+            return 0
         return 1.0 * tot_training_intensity / t_max
 
     def _aggregate(self, w_locals):
