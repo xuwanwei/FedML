@@ -420,8 +420,8 @@ def test_with_budget(dataset, device, args, model_trainer):
     goal_list = []
     budget_list = []
     for budget in range(8, 21, 4):
-        fed3API = FedOptAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
-        t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fed3API.train()
+        fedoptAPI = FedOptAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
+        t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fedoptAPI.train()
         t_goal_list = []
         for idx, ti_val in enumerate(t_ti_sum_list):
             t_goal_list.append(float(ti_val) / float(t_time_list[idx]))

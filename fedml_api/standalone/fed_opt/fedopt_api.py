@@ -105,7 +105,7 @@ class FedOptAPI(object):
                 _init_client_bid(client)
 
             client_indexes, _ = self._get_winners()
-            logging.info("client selected:{}".format(client_indexes))
+            logging.info("train: client selected:{}".format(client_indexes))
 
             if len(client_indexes) == 0:
                 continue
@@ -120,7 +120,6 @@ class FedOptAPI(object):
 
                 # train on new dataset
                 w = client.train(copy.deepcopy(w_global))
-                # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 t_max = max(t_max, client.get_time())
                 ti_sum += client.get_training_intensity()
@@ -132,6 +131,7 @@ class FedOptAPI(object):
             # time
             time_list.append(t_max)
             ti_sum_list.append(ti_sum)
+            logging.info("train: ti sum:{}".format(ti_sum))
 
             # test results
             # at last round
@@ -193,7 +193,7 @@ class FedOptAPI(object):
         for bid_idx, bid_val in enumerate(self.candidate_selected):
             if bid_val == 1:
                 winners_indexes.append(self.candidates[bid_idx].client_idx)
-        logging.info("winners:{}".format(winners_indexes))
+        logging.info("DFS: winners:{}".format(winners_indexes))
 
         return winners_indexes
 
@@ -213,7 +213,6 @@ class FedOptAPI(object):
         for client in m_client_list:
             if client.get_time() <= self.t_max:
                 candidates.append(client.bid)
-        self.candidates = candidates
 
         self.t_max = 0
 
@@ -230,12 +229,23 @@ class FedOptAPI(object):
         # constraint
         model += (pl.lpDot(payment_a, x) <= self.args.budget_per_round)
         model.solve()
-
+        print("budget:{}".format(self.args.budget_per_round))
         for idx, var in enumerate(model.variables()):
+            print("idx:{}, client_idx:{}, var:{}, b:{}, b_a:{}, ti:{}, ti_a:{}".format(idx, candidates[idx].client_idx,
+                                                                                       var.value(),
+                                                                                       candidates[idx].get_bidding_price(),
+                                                                                       payment_a[idx],
+                                                                                       candidates[
+                                                                                           idx].get_training_intensity(),
+                                                                                       ti_a[idx]))
             if var.value() == 1:
                 winners_indexes.append(candidates[idx].client_idx)
 
-        logging.info("winners:{}".format(winners_indexes))
+        logging.info("LP winners:{}".format(winners_indexes))
+        logging.info("LP ti sum:{}".format(model.objective.value()))
+        for name, constraint in model.constraints.items():
+            print(f"{name}: {constraint.value()}")
+
         return winners_indexes
 
     def _get_cost(self, winners):
@@ -256,17 +266,21 @@ class FedOptAPI(object):
         :param winners: List(int)
         :return: int
         '''
+        logging.info("getting utility for {}".format(winners))
         if len(winners) == 0:
             return 0
         t_max = 0
         tot_training_intensity = 0
-        logging.info("getting utility for {}".format(winners))
         for index in winners:
             client = self.client_list[index]
             t_max = max(t_max, client.get_time())
             tot_training_intensity += client.get_training_intensity()
+            logging.info("index:{}, ti:{}".format(index, client.get_training_intensity()))
         if len(winners) == 0:
+            logging.info("utility: 0")
             return 0
+        logging.info("ti sum:{}, t_max:{}, utility:{}".format(tot_training_intensity, t_max,
+                                                              1.0 * tot_training_intensity / t_max))
         return 1.0 * tot_training_intensity / t_max
 
     def _aggregate(self, w_locals):
