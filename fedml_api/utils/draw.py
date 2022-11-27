@@ -7,16 +7,20 @@ from matplotlib import pyplot as plt
 DATA_PATH_PRE = "../../../OutputData"
 IMG_PATH_PRE = "../../../OutputImage"
 
-DATA_PATH = "../../../OutputData/fed_opt"
-IMG_PATH = "../../../OutputImage/fed_opt"
+DATA_PATH = "../../../OutputData/fed_avg"
+IMG_PATH = "../../../OutputImage/fed_avg"
 
-in_filename = "fed3-1104-INFO-2022-11-25-07-51"
-filename_3 = "fed3-1104-INFO-2022-11-26-14-31"
-filename_bf = "fedbf-1104-INFO-2022-11-26-15-39"
-filename_opt = "fedopt-1104-INFO-2022-11-26-22-22"
+in_filename = "fedopt-1104-INFO-2022-11-27-16-12"
+
+filename_3 = "fed3-1104-B-INFO-2022-11-27-20-38"
+filename_bf = "fedbf-1104-B-INFO-2022-11-27-20-07"
+filename_opt = "fedopt-1104-B-INFO-2022-11-27-19-34"
+filename_avg = "fedavg-1104-B-INFO-2022-11-27-21-48"
+
 DATA_PATH_3 = "../../../OutputData/fed_3"
 DATA_PATH_OPT = "../../../OutputData/fed_opt"
 DATA_PATH_BF = "../../../OutputData/fed_bf"
+DATA_PATH_AVG = "../../../OutputData/fed_avg"
 timestamp = time.time()
 datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
 out_file_name = 'fed3-{}-{}'.format(1104, datatime)
@@ -168,6 +172,7 @@ def draw_accuracy_cmp():
     acc_list_1 = []
     acc_list_2 = []
     acc_list_3 = []
+    acc_list_4 = []
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -187,13 +192,21 @@ def draw_accuracy_cmp():
             print("round:{}, acc:{}".format(row[0], row[1]))
             acc_list_3.append(float(row[1]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[1]))
+            acc_list_4.append(float(row[1]))
+
     plt.plot(round_list, acc_list_1)
     plt.plot(round_list, acc_list_2)
     plt.plot(round_list, acc_list_3)
+    plt.plot(round_list, acc_list_4)
+
     plt.title("Tested Accuracy")
     plt.ylabel("Accuracy")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "ACC-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
@@ -204,6 +217,8 @@ def draw_loss_cmp():
     loss_list_1 = []
     loss_list_2 = []
     loss_list_3 = []
+    loss_list_4 = []
+
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -223,14 +238,20 @@ def draw_loss_cmp():
             print("round:{}, acc:{}".format(row[0], row[2]))
             loss_list_3.append(float(row[2]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[2]))
+            loss_list_4.append(float(row[2]))
     plt.plot(round_list, loss_list_1)
     plt.plot(round_list, loss_list_2)
     plt.plot(round_list, loss_list_3)
+    plt.plot(round_list, loss_list_4)
 
     plt.title("Tested Loss")
     plt.ylabel("Loss")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "LOSS-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
@@ -241,6 +262,8 @@ def draw_time_cmp():
     time_list_1 = []
     time_list_2 = []
     time_list_3 = []
+    time_list_4 = []
+
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -260,15 +283,22 @@ def draw_time_cmp():
             print("round:{}, acc:{}".format(row[0], row[3]))
             time_list_3.append(float(row[3]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[3]))
+            time_list_4.append(float(row[3]))
+
     logging.info("round_list:{}".format(round_list))
     plt.plot(round_list, time_list_1)
     plt.plot(round_list, time_list_2)
     plt.plot(round_list, time_list_3)
+    plt.plot(round_list, time_list_4)
 
     plt.title("Time")
     plt.ylabel("Time")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "TIME-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
@@ -279,6 +309,7 @@ def draw_training_intensity_sum_cmp():
     time_list_1 = []
     time_list_2 = []
     time_list_3 = []
+    time_list_4 = []
 
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
@@ -299,15 +330,22 @@ def draw_training_intensity_sum_cmp():
             print("round:{}, acc:{}".format(row[0], row[4]))
             time_list_3.append(float(row[4]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("round:{}, acc:{}".format(row[0], row[4]))
+            time_list_4.append(float(row[4]))
+
     logging.info("round_list:{}".format(round_list))
     plt.plot(round_list, time_list_1)
     plt.plot(round_list, time_list_2)
     plt.plot(round_list, time_list_3)
+    plt.plot(round_list, time_list_4)
 
     plt.title("Total Training Intensity")
     plt.ylabel("Total Training Intensity")
     plt.xlabel("Rounds")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "TI-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
@@ -373,7 +411,7 @@ def draw_accuracy_budget(file_name=None):
     plt.show()
 
 
-def draw_loss_budget(file_name):
+def draw_loss_budget(file_name=None):
     if file_name is None:
         file_name = in_filename
     budget_list = []
@@ -394,7 +432,7 @@ def draw_loss_budget(file_name):
     plt.show()
 
 
-def draw_time_budget(file_name):
+def draw_time_budget(file_name=None):
     if file_name is None:
         file_name = in_filename
     budget_list = []
@@ -403,7 +441,7 @@ def draw_time_budget(file_name):
     with open("{}/{}.csv".format(DATA_PATH, file_name), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
-            print("round:{}, time:{}".format(row[0], row[1]))
+            print("budget:{}, time:{}".format(row[0], row[1]))
             budget_list.append(int(row[0]))
             loss_list.append(float(row[3]))
 
@@ -420,10 +458,13 @@ def draw_accuracy_cmp_with_time():
     time_list_1 = []
     time_list_2 = []
     time_list_3 = []
+    time_list_4 = []
 
     acc_list_1 = []
     acc_list_2 = []
     acc_list_3 = []
+    acc_list_4 = []
+
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -454,13 +495,25 @@ def draw_accuracy_cmp_with_time():
                 time_list_3.append(time_list_3[-1] + float(row[0]))
             acc_list_3.append(float(row[1]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("time:{}, acc:{}".format(row[0], row[1]))
+            if len(time_list_4) == 0:
+                time_list_4.append(float(row[0]))
+            else:
+                time_list_4.append(time_list_4[-1] + float(row[0]))
+            acc_list_4.append(float(row[1]))
+
     plt.plot(time_list_1, acc_list_1)
     plt.plot(time_list_2, acc_list_2)
     plt.plot(time_list_3, acc_list_3)
+    plt.plot(time_list_4, acc_list_4)
+
     plt.title("Tested Accuracy")
     plt.ylabel("Accuracy")
     plt.xlabel("Time")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "T-ACC-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
@@ -470,10 +523,13 @@ def draw_loss_cmp_with_time():
     time_list_1 = []
     time_list_2 = []
     time_list_3 = []
+    time_list_4 = []
 
     loss_list_1 = []
     loss_list_2 = []
     loss_list_3 = []
+    loss_list_4 = []
+
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -504,16 +560,29 @@ def draw_loss_cmp_with_time():
                 time_list_3.append(time_list_3[-1] + float(row[0]))
             loss_list_3.append(float(row[2]))
 
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("time:{}, loss:{}".format(row[0], row[2]))
+            if len(time_list_4) == 0:
+                time_list_4.append(float(row[0]))
+            else:
+                time_list_4.append(time_list_4[-1] + float(row[0]))
+            loss_list_4.append(float(row[2]))
+
     plt.plot(time_list_1, loss_list_1)
     plt.plot(time_list_2, loss_list_2)
     plt.plot(time_list_3, loss_list_3)
+    plt.plot(time_list_4, loss_list_4)
+
     plt.title("Tested Loss")
     plt.ylabel("LOSS")
     plt.xlabel("Time")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "T-LOSS-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()
+
 
 def draw_time_cmp_with_budget():
     budget_list = []
@@ -521,32 +590,136 @@ def draw_time_cmp_with_budget():
     time_list_1 = []
     time_list_2 = []
     time_list_3 = []
+    time_list_4 = []
+
     with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
-            print("budget:{}, acc:{}".format(row[0], row[2]))
+            print("budget:{}, acc:{}".format(row[0], row[3]))
             budget_list.append(float(row[0]))
-            time_list_1.append(float(row[2]))
+            time_list_1.append(float(row[3]))
 
     with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
-            print("budget:{}, time:{}".format(row[0], row[2]))
-            time_list_2.append(float(row[2]))
+            print("budget:{}, time:{}".format(row[0], row[3]))
+            time_list_2.append(float(row[3]))
 
     with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         for row in reader:
-            print("budget:{}, time:{}".format(row[0], row[2]))
-            time_list_3.append(float(row[2]))
+            print("budget:{}, time:{}".format(row[0], row[3]))
+            time_list_3.append(float(row[3]))
+
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[3]))
+            time_list_4.append(float(row[3]))
 
     plt.plot(budget_list, time_list_1)
     plt.plot(budget_list, time_list_2)
     plt.plot(budget_list, time_list_3)
+    plt.plot(budget_list, time_list_4)
+
     plt.title("Tested Time")
     plt.ylabel("Time")
     plt.xlabel("Budget")
-    plt.legend(['ours', 'optimal', 'bid price first'])
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
     output_filename = "B-T-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
+    plt.show()
+
+
+def draw_accuracy_cmp_with_budget():
+    budget_list = []
+
+    acc_list_1 = []
+    acc_list_2 = []
+    acc_list_3 = []
+    acc_list_4 = []
+
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, acc:{}".format(row[0], row[1]))
+            budget_list.append(float(row[0]))
+            acc_list_1.append(float(row[1]))
+
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[1]))
+            acc_list_2.append(float(row[1]))
+
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[1]))
+            acc_list_3.append(float(row[1]))
+
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[1]))
+            acc_list_4.append(float(row[1]))
+
+    plt.plot(budget_list, acc_list_1)
+    plt.plot(budget_list, acc_list_2)
+    plt.plot(budget_list, acc_list_3)
+    plt.plot(budget_list, acc_list_4)
+
+    plt.title("Tested Accuracy")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Budget")
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
+    output_filename = "B-ACC-{}".format(OUTPUT_FILENAME)
+    plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
+    plt.show()
+
+
+def draw_goal_cmp_with_budget():
+    budget_list = []
+
+    time_list_1 = []
+    time_list_2 = []
+    time_list_3 = []
+    time_list_4 = []
+
+    with open("{}/{}.csv".format(DATA_PATH_3, filename_3), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, acc:{}".format(row[0], row[5]))
+            budget_list.append(float(row[0]))
+            time_list_1.append(float(row[5]))
+
+    with open("{}/{}.csv".format(DATA_PATH_OPT, filename_opt), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[5]))
+            time_list_2.append(float(row[5]))
+
+    with open("{}/{}.csv".format(DATA_PATH_BF, filename_bf), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[5]))
+            time_list_3.append(float(row[5]))
+
+    with open("{}/fed_avg/{}.csv".format(DATA_PATH_PRE, filename_avg), mode="r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print("budget:{}, time:{}".format(row[0], row[5]))
+            time_list_4.append(float(row[5]))
+
+    plt.plot(budget_list, time_list_1)
+    plt.plot(budget_list, time_list_2)
+    plt.plot(budget_list, time_list_3)
+    plt.plot(budget_list, time_list_4)
+
+    plt.title("Tested Objective")
+    plt.ylabel("Objective")
+    plt.xlabel("Budget")
+    plt.legend(['ours', 'optimal', 'bid price first', 'FedAvg'])
+    output_filename = "B-O-{}".format(OUTPUT_FILENAME)
     plt.savefig("{}/cmp/{}.png".format(IMG_PATH_PRE, output_filename))
     plt.show()

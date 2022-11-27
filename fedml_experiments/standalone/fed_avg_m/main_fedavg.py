@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import wandb
 
-DATA_PATH = "../../../OutputData/fed_bf"
+DATA_PATH = "../../../OutputData/fed_avg"
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../")))
 
@@ -38,7 +38,7 @@ from fedml_api.standalone.fed_3.my_model_trainer_classification import MyModelTr
 from fedml_api.standalone.fed_3.my_model_trainer_nwp import MyModelTrainer as MyModelTrainerNWP
 from fedml_api.standalone.fed_3.my_model_trainer_tag_prediction import MyModelTrainer as MyModelTrainerTAG
 
-from fedml_api.standalone.fed_bf.fedbf_api import FedBFAPI
+from fedml_api.standalone.fed_avg_m.fedavg_api import FedAvgAPI
 from fedml_api.utils.draw import draw_IC
 from fedml_api.utils.draw import draw_individual_rationality
 from fedml_api.utils.draw import draw_budget_balance
@@ -298,13 +298,13 @@ def custom_model_trainer(args, model):
 
 
 def test_truthfulness(device, args, dataset, model_trainer):
-    fed_bfAPI = FedBFAPI(device, args, dataset=dataset, model_trainer=model_trainer)
+    fed_3API = FedAvgAPI(device, args, dataset=dataset, model_trainer=model_trainer)
     truth_ratio_list = []
     utility_list = []
     logging.info("####################Truthfulness#####################")
     for truth_ratio in np.arange(0.2, 2, 0.2):
         logging.info("Ratio:" + str(truth_ratio))
-        client_utility, client_bidding_price = fed_bfAPI.train_for_truthfulness(truth_ratio=truth_ratio)
+        client_utility, client_bidding_price = fed_3API.train_for_truthfulness(truth_ratio=truth_ratio)
         truth_ratio_list.append(truth_ratio)
         utility_list.append(client_utility)
 
@@ -321,7 +321,7 @@ def test_truthfulness(device, args, dataset, model_trainer):
 
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fedbf-{}-IC-{}'.format(args.seed, datatime)
+    file_name = 'fedavg-{}-IC-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -338,8 +338,8 @@ def test_budget_balance_with_client_num(device, args, dataset, model_trainer):
     logging.info("####################Budget Balance#####################")
     for client_num in np.arange(10, 100, 10):
         args.client_num_in_total = client_num
-        fed_bfAPI = FedBFAPI(device, args, dataset, model_trainer)
-        res = fed_bfAPI.test_properties()
+        fed_3API = FedAvgAPI(device, args, dataset, model_trainer)
+        res = fed_3API.test_properties()
         tot_payment_list.append(res.tot_payment)
         budget_list.append(args.budget_per_round)
         client_num_list.append(client_num)
@@ -349,7 +349,7 @@ def test_budget_balance_with_client_num(device, args, dataset, model_trainer):
 
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fedbf-{}-BB-{}'.format(args.seed, datatime)
+    file_name = 'fedavg-{}-BB-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -366,8 +366,8 @@ def test_individual_rationality(device, args, dataset, model_trainer):
     logging.info("####################IR#####################")
     for client_num in np.arange(10, 100, 10):
         args.client_num_in_total = client_num
-        fed_bfAPI = FedBFAPI(device, args, dataset, model_trainer)
-        res = fed_bfAPI.test_properties()
+        fed_3API = FedAvgAPI(device, args, dataset, model_trainer)
+        res = fed_3API.test_properties()
         payment_list.append(res.payment)
         true_cost_list.append(res.true_cost)
         client_num_list.append(client_num)
@@ -377,7 +377,7 @@ def test_individual_rationality(device, args, dataset, model_trainer):
 
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fedbf-{}-IR-{}'.format(args.seed, datatime)
+    file_name = 'fedavg-{}-IR-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -388,8 +388,8 @@ def test_individual_rationality(device, args, dataset, model_trainer):
 
 
 def test_with_rounds(dataset, device, args, model_trainer):
-    fedbfAPI = FedBFAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
-    acc_list, loss_list, time_list, ti_sum_list, round_list = fedbfAPI.train()
+    fedavgAPI = FedAvgAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
+    acc_list, loss_list, time_list, ti_sum_list, round_list = fedavgAPI.train()
     goal_list = []
     for idx, ti_val in enumerate(ti_sum_list):
         goal_list.append(float(ti_val) / float(time_list[idx]))
@@ -400,7 +400,7 @@ def test_with_rounds(dataset, device, args, model_trainer):
     # writing data to file
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fedbf-{}-INFO-{}'.format(args.seed, datatime)
+    file_name = 'fedavg-{}-INFO-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -421,12 +421,13 @@ def test_with_budget(dataset, device, args, model_trainer):
     budget_list = []
     for budget in range(8, 21, 4):
         args.budget_per_round = budget
-        fed3API = FedBFAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
-        t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fed3API.train()
+        fedavgAPI = FedAvgAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
+        t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fedavgAPI.train()
+        # logging.info("t_ti_sum_list:{}".format(t_ti_sum_list))
         t_goal_list = []
         for idx, ti_val in enumerate(t_ti_sum_list):
             t_goal_list.append(float(ti_val) / float(t_time_list[idx]))
-
+        logging.info("budget:{}, time:{}".format(budget, t_time_list))
         if len(t_acc_list) == 0:
             acc_list.append(0)
             loss_list.append(0)
@@ -447,13 +448,13 @@ def test_with_budget(dataset, device, args, model_trainer):
     # writing data to file
     timestamp = time.time()
     datatime = time.strftime("%Y-%m-%d-%H-%M", time.localtime(timestamp))
-    file_name = 'fedBF-{}-B-INFO-{}'.format(args.seed, datatime)
+    file_name = 'fedavg-{}-B-INFO-{}'.format(args.seed, datatime)
     print("writing {}".format(file_name))
     with open('{}/{}.csv'.format(DATA_PATH, file_name), mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(data_table)
 
-    if args.draw == True:
+    if args.draw is True:
         draw_accuracy_budget(file_name)
         draw_loss_budget(file_name)
         draw_time_budget(file_name)
@@ -464,7 +465,7 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    parser = add_args(argparse.ArgumentParser(description='fed_bf-standalone'))
+    parser = add_args(argparse.ArgumentParser(description='fed_3-standalone'))
     args = parser.parse_args()
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
@@ -472,7 +473,7 @@ if __name__ == "__main__":
 
     wandb.init(
         project="fedml",
-        name="FedBF-r" + str(args.comm_round) + "-e" + str(args.epochs),
+        name="FedAvg-r" + str(args.comm_round) + "-e" + str(args.epochs),
         config=args
     )
 

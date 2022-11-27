@@ -17,8 +17,8 @@
 #--seed 1103 \
 #--draw True
 
-# test with rounds
-python ./main_fedbf.py \
+# Test with budget
+python ./main_fedavg.py \
 --gpu 0 \
 --dataset mnist \
 --data_dir ./../../../data/mnist \

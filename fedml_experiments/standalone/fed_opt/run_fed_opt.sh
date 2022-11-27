@@ -5,9 +5,9 @@ python ./main_fedopt.py \
 --data_dir ./../../../data/mnist \
 --model lr \
 --partition_method hetero \
---client_num_in_total 20 \
+--client_num_in_total 100 \
 --client_num_per_round 6 \
---comm_round 1 \
+--comm_round 4 \
 --epochs 5 \
 --batch_size 10 \
 --client_optimizer sgd \

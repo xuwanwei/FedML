@@ -454,7 +454,7 @@ def test_with_budget(dataset, device, args, model_trainer):
         writer = csv.writer(f)
         writer.writerows(data_table)
 
-    if args.draw is True:
+    if args.draw:
         draw_accuracy_budget(file_name)
         draw_loss_budget(file_name)
         draw_time_budget(file_name)
@@ -504,6 +504,6 @@ if __name__ == "__main__":
     # test_with_budget(device, args)
 
     # Test Accuracy and Time
-    test_with_rounds(dataset, device, args, model_trainer)
+    # test_with_rounds(dataset, device, args, model_trainer)
 
-    # test_with_budget(dataset, device, args, model_trainer)
+    test_with_budget(dataset, device, args, model_trainer)

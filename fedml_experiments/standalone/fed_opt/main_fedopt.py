@@ -420,6 +420,7 @@ def test_with_budget(dataset, device, args, model_trainer):
     goal_list = []
     budget_list = []
     for budget in range(8, 21, 4):
+        args.budget_per_round = budget
         fedoptAPI = FedOptAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
         t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fedoptAPI.train()
         t_goal_list = []
@@ -435,9 +436,9 @@ def test_with_budget(dataset, device, args, model_trainer):
         else:
             acc_list.append(t_acc_list[-1])
             loss_list.append(t_loss_list[-1])
-            time_list.append(t_time_list[-1])
-            ti_sum_list.append(t_ti_sum_list[-1])
-            goal_list.append(t_goal_list[-1])
+            time_list.append(np.mean(t_time_list))
+            ti_sum_list.append(np.mean(t_ti_sum_list))
+            goal_list.append(np.mean(t_goal_list))
         budget_list.append(budget)
 
     data_table = [[b, acc, loss, t, ti_sum, goal] for (b, acc, loss, t, ti_sum, goal) in
@@ -452,7 +453,7 @@ def test_with_budget(dataset, device, args, model_trainer):
         writer = csv.writer(f)
         writer.writerows(data_table)
 
-    if args.draw is True:
+    if args.draw:
         draw_accuracy_budget(file_name)
         draw_loss_budget(file_name)
         draw_time_budget(file_name)
@@ -502,6 +503,6 @@ if __name__ == "__main__":
     # test_with_budget(device, args)
 
     # Test Accuracy and Time
-    test_with_rounds(dataset, device, args, model_trainer)
+    # test_with_rounds(dataset, device, args, model_trainer)
 
-    # test_with_budget(dataset, device, args, model_trainer)
+    test_with_budget(dataset, device, args, model_trainer)
