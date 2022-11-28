@@ -20,6 +20,6 @@ from fedml_api.utils.draw import *
 
 # draw_accuracy_cmp_with_time()
 # draw_loss_cmp_with_time()
-draw_time_cmp_with_budget()
+# draw_time_cmp_with_budget()
 # draw_accuracy_cmp_with_budget()
-draw_goal_cmp_with_budget()
+# draw_goal_cmp_with_budget()

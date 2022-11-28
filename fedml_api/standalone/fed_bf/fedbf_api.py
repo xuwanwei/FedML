@@ -82,8 +82,10 @@ class FedBFAPI(object):
             payment.append(bid.get_bidding_price())
             t_max = max(t_max, bid.get_time())
             tot_training_intensity += bid.get_training_intensity()
-
-        mx_utility = tot_training_intensity / t_max
+        if len(winners) == 0:
+            mx_utility = 0
+        else:
+            mx_utility = tot_training_intensity / t_max
         return winners, mx_utility, payment
 
     def test_properties(self):

@@ -419,7 +419,7 @@ def test_with_budget(dataset, device, args, model_trainer):
     ti_sum_list = []
     goal_list = []
     budget_list = []
-    for budget in range(8, 21, 4):
+    for budget in range(4, 41, 4):
         args.budget_per_round = budget
         fedavgAPI = FedAvgAPI(device=device, args=args, dataset=dataset, model_trainer=model_trainer)
         t_acc_list, t_loss_list, t_time_list, t_ti_sum_list, _ = fedavgAPI.train()
@@ -435,11 +435,11 @@ def test_with_budget(dataset, device, args, model_trainer):
             ti_sum_list.append(0)
             goal_list.append(0)
         else:
-            acc_list.append(t_acc_list[-1])
-            loss_list.append(t_loss_list[-1])
-            time_list.append(t_time_list[-1])
-            ti_sum_list.append(t_ti_sum_list[-1])
-            goal_list.append(t_goal_list[-1])
+            acc_list.append(np.mean(t_acc_list))
+            loss_list.append(np.mean(t_loss_list))
+            time_list.append(np.mean(t_time_list))
+            ti_sum_list.append(np.mean(t_ti_sum_list))
+            goal_list.append(np.mean(t_goal_list))
         budget_list.append(budget)
 
     data_table = [[b, acc, loss, t, ti_sum, goal] for (b, acc, loss, t, ti_sum, goal) in

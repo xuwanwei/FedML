@@ -1,6 +1,6 @@
-def get_client_list(m_client_list, client_list):
+def get_client_list(client_index, client_list):
     ret_client_list = []
-    for index in m_client_list:
+    for index in client_index:
         ret_client_list.append(client_list[index])
     return ret_client_list
 

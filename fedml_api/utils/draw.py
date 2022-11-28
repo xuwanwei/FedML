@@ -7,15 +7,15 @@ from matplotlib import pyplot as plt
 DATA_PATH_PRE = "../../../OutputData"
 IMG_PATH_PRE = "../../../OutputImage"
 
-DATA_PATH = "../../../OutputData/fed_avg"
-IMG_PATH = "../../../OutputImage/fed_avg"
+DATA_PATH = "../../../OutputData/fed_3"
+IMG_PATH = "../../../OutputImage/fed_3"
 
 in_filename = "fedopt-1104-INFO-2022-11-27-16-12"
 
-filename_3 = "fed3-1104-B-INFO-2022-11-27-20-38"
-filename_bf = "fedbf-1104-B-INFO-2022-11-27-20-07"
-filename_opt = "fedopt-1104-B-INFO-2022-11-27-19-34"
-filename_avg = "fedavg-1104-B-INFO-2022-11-27-21-48"
+filename_3 = "fed3-1104-B-INFO-2022-11-28-09-08"
+filename_bf = "fedBF-1104-B-INFO-2022-11-27-23-27"
+filename_opt = "fedopt-1104-B-INFO-2022-11-27-23-41"
+filename_avg = "fedavg-1104-B-INFO-2022-11-27-23-31"
 
 DATA_PATH_3 = "../../../OutputData/fed_3"
 DATA_PATH_OPT = "../../../OutputData/fed_opt"
